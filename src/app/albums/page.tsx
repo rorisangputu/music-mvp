@@ -37,7 +37,7 @@ export default function AlbumsPage() {
         {albums.map((album) => (
           <Link
             key={album.id}
-            href={`/album/${album.id}`}
+            href={`/albums/${album.id}`}
             className="p-4 border rounded shadow hover:shadow-lg transition"
           >
             <Image
