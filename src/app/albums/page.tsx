@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const CATEGORIES = ["TV", "Film", "Corporate", "Podcast", "Jingles", "VOD"];
 const GENRES = [
@@ -27,10 +28,27 @@ type Album = {
 };
 
 export default function AlbumsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
+
+  const updateURLParams = (newParams: {
+    search?: string;
+    category?: string;
+    genre?: string;
+  }) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (newParams.search !== undefined) params.set("search", newParams.search);
+    if (newParams.category !== undefined)
+      params.set("category", newParams.category);
+    if (newParams.genre !== undefined) params.set("genre", newParams.genre);
+
+    router.push(`/albums?${params.toString()}`);
+  };
 
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -69,16 +87,22 @@ export default function AlbumsPage() {
       <div className="flex flex-col gap-4 md:flex-row mb-6">
         <input
           type="text"
-          placeholder="Search albums..."
-          className="p-2 border rounded w-full md:w-1/3"
+          placeholder="Search..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            updateURLParams({ search: e.target.value });
+          }}
+          className="p-2 border rounded w-full md:w-1/3"
         />
 
         <select
-          className="p-2 border rounded md:w-1/4"
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+            updateURLParams({ category: e.target.value });
+          }}
+          className="p-2 border rounded md:w-1/4"
         >
           <option value="">All Categories</option>
           {CATEGORIES.map((cat) => (
@@ -87,15 +111,29 @@ export default function AlbumsPage() {
         </select>
 
         <select
-          className="p-2 border rounded md:w-1/4"
           value={genreFilter}
-          onChange={(e) => setGenreFilter(e.target.value)}
+          onChange={(e) => {
+            setGenreFilter(e.target.value);
+            updateURLParams({ genre: e.target.value });
+          }}
+          className="p-2 border rounded md:w-1/4"
         >
           <option value="">All Genres</option>
           {GENRES.map((genre) => (
             <option key={genre}>{genre}</option>
           ))}
         </select>
+        <button
+          onClick={() => {
+            setSearch("");
+            setCategoryFilter("");
+            setGenreFilter("");
+            router.push("/albums");
+          }}
+          className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+        >
+          Clear Filters
+        </button>
       </div>
 
       {/* Album Grid */}
