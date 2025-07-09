@@ -7,6 +7,8 @@ import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
+import debounce from "lodash.debounce";
+import { useMemo } from "react";
 
 const CATEGORIES = ["TV", "Film", "Corporate", "Podcast", "Jingles", "VOD"];
 const GENRES = [
@@ -34,6 +36,12 @@ export default function AlbumsPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
+
+  const debouncedUpdateSearch = useMemo(() => {
+    return debounce((value: string) => {
+      updateURLParams({ search: value });
+    }, 4000); // 400ms delay
+  }, [searchParams]);
 
   const updateURLParams = (newParams: {
     search?: string;
@@ -91,7 +99,7 @@ export default function AlbumsPage() {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            updateURLParams({ search: e.target.value });
+            debouncedUpdateSearch(e.target.value);
           }}
           className="p-2 border rounded w-full md:w-1/3"
         />
