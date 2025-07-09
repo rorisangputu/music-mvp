@@ -4,22 +4,6 @@ export default function Home() {
   return (
     <div className="w-full h-screen py-10">
       <div className="w-[70%] mx-auto flex flex-col">
-        <div className="flex justify-between pb-2">
-          <h1>CMMG Music Library</h1>
-          <div>
-            <ul className="flex space-x-4">
-              <li>
-                <Link href={"/"}>Home</Link>
-              </li>
-              <li>
-                <Link href={"/albums"}>Library</Link>
-              </li>
-              <li>
-                <Link href={"/licensing"}>Licensing</Link>
-              </li>
-            </ul>
-          </div>
-        </div>
         <section className="py-2 space-y-5">
           <div className="bg-gray-200 h-[40vh] space-y-5 rounded-md flex flex-col justify-center items-center">
             <h1 className="text-slate-700 text-2xl max-w-[30%] text-center">
