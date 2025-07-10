@@ -2,6 +2,7 @@ import Hero from "@/components/home/Hero";
 import Image from "next/image";
 import Link from "next/link";
 import bg from "../../public/bg.png";
+import NewReleases from "@/components/home/NewReleases";
 
 export default function Home() {
   return (
@@ -12,10 +13,11 @@ export default function Home() {
           <Image
             src={bg} // replace with your image path
             alt="Background"
-            className="w-full h-full object-cover opacity-50"
+            className="w-full h-[100vh] object-cover opacity-50"
           />
         </div>
         <Hero />
+        <NewReleases />
       </div>
     </div>
   );
