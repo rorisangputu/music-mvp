@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 
 const Nav = () => {
   return (
-    <div className="w-[90%] xl:w-[80%] mx-auto mt-10 text-white">
+    <div className="w-[90%] xl:w-[80%] mx-auto mt-7 text-white">
       <div className="flex items-center justify-between">
         <div className="">
           <Image
