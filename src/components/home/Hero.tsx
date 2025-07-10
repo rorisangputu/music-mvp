@@ -37,7 +37,7 @@ const Hero = (props: Props) => {
               Sign Up
             </Link>
           </div>
-          <div className="flex space-x-5">
+          <div className="flex space-x-5 py-5">
             <div className="flex space-x-2 items-center">
               <Check className="text-[#ec7027]" size={20} />
               <p className="text-slate-200 text-sm">High-Quality</p>
@@ -53,7 +53,7 @@ const Hero = (props: Props) => {
           </div>
         </div>
         {/* Hero Image */}
-        <div className="hidden md:flex">
+        <div className="hidden lg:flex">
           <Image src={heroIllustration} alt="image" className="w-full" />
           {/* <a href="https://storyset.com/music">
             Music illustrations by Storyset
