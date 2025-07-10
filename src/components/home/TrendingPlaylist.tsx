@@ -43,7 +43,7 @@ const TrendingPlaylist = (props: Props) => {
                   key={i}
                   className="pl-1 md:basis-1/2 lg:basis-1/4"
                 >
-                  <div className="relative border h-[50vh] w-full">
+                  <div className="relative border h-[60vh] w-full">
                     <Image
                       src={playlist.image}
                       alt={playlist.title}
