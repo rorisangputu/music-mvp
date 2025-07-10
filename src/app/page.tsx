@@ -4,6 +4,7 @@ import Link from "next/link";
 import bg from "../../public/bg.png";
 import NewReleases from "@/components/home/NewReleases";
 import TrendingPlaylist from "@/components/home/TrendingPlaylist";
+import NoSearch from "@/components/home/NoSearch";
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
       </div>
       <div className="bg-gray-50">
         <NewReleases />
+        <NoSearch />
         <TrendingPlaylist />
       </div>
     </div>
