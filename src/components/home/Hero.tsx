@@ -1,0 +1,67 @@
+import Image from "next/image";
+import Link from "next/link";
+import React from "react";
+import heroIllustration from "../../../public/Music-bro.png";
+import { Check } from "lucide-react";
+type Props = {};
+
+const Hero = (props: Props) => {
+  return (
+    <section className="relative w-[90%] xl:w-[80%] mx-auto">
+      {/* CONTENT */}
+      <div className="w-full space-y-5 z-10 relative rounded-md grid grid-cols-1 lg:grid-cols-2 justify-between items-center">
+        {/* Hero Content */}
+        <div className="">
+          <div className="space-y-8">
+            <h1 className="text-slate-100 text-6xl font-semibold">
+              <span className="text-orange-500">High-Quality</span> Sound and
+              Music Library
+            </h1>
+            <p className="text-slate-100 font-light text-lg">
+              The ultimate resource for professional sound designers, video
+              producers, podcasters, musicians, and anyone who needs top-notch
+              audio quality for their projects
+            </p>
+          </div>
+          <div className="flex gap-3 my-10">
+            <Link
+              href={"/albums"}
+              className="bg-[#ec7027] text-black font-medium p-3 rounded-md"
+            >
+              Browse Trends
+            </Link>
+            <Link
+              href={"/albums"}
+              className="bg-transparent border text-white font-medium p-3 rounded-md"
+            >
+              Sign Up
+            </Link>
+          </div>
+          <div className="flex space-x-5">
+            <div className="flex space-x-2 items-center">
+              <Check className="text-[#ec7027]" size={20} />
+              <p className="text-slate-200 text-sm">High-Quality</p>
+            </div>
+            <div className="flex space-x-2 items-center">
+              <Check className="text-[#ec7027]" size={20} />
+              <p className="text-slate-200 text-sm">Easy Licensing</p>
+            </div>
+            <div className="flex space-x-2 items-center">
+              <Check className="text-[#ec7027]" size={20} />
+              <p className="text-slate-200  text-sm">Regular Availability</p>
+            </div>
+          </div>
+        </div>
+        {/* Hero Image */}
+        <div className="hidden md:flex">
+          <Image src={heroIllustration} alt="image" className="w-full" />
+          {/* <a href="https://storyset.com/music">
+            Music illustrations by Storyset
+          </a> */}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Hero;
