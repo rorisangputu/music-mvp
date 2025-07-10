@@ -21,7 +21,7 @@ type Props = {};
 
 const TrendingPlaylist = (props: Props) => {
   return (
-    <div className="w-full py-5">
+    <div className="w-full py-10">
       <div className="w-[90%] lg:w-[80%] mx-auto">
         <div className="space-y-5">
           <div className="flex justify-between">
