@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 export default function AdminSignin() {
@@ -21,7 +20,7 @@ export default function AdminSignin() {
     setMessage({ type: "", text: "" });
 
     try {
-      // First validate with our API
+      // Call our API route which handles both validation AND NextAuth signin
       const response = await fetch("/api/admin/signin", {
         method: "POST",
         headers: {
@@ -33,23 +32,12 @@ export default function AdminSignin() {
       const data = await response.json();
 
       if (response.ok) {
-        // If validation passes, sign in with NextAuth
-        const result = await signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
-          loginType: "admin",
-          redirect: false,
-        });
-
-        if (result?.error) {
-          setMessage({ type: "error", text: "Authentication failed" });
-        } else {
-          setMessage({ type: "success", text: data.success });
-          // Redirect to dashboard
-          setTimeout(() => {
-            router.push("/admin/dashboard");
-          }, 1000);
-        }
+        setMessage({ type: "success", text: data.success });
+        // Redirect to dashboard
+        setTimeout(() => {
+          router.push("/admin/dashboard");
+          router.refresh(); // Refresh to update session
+        }, 1000);
       } else {
         if (data.redirectTo) {
           // Redirect to verification page
