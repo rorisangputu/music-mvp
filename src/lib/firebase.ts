@@ -7,12 +7,12 @@ import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBb_WthbevKH_du9gtwC_DZdAvjAYaFAr4",
-  authDomain: "musicapp-e347f.firebaseapp.com",
-  projectId: "musicapp-e347f",
-  storageBucket: "musicapp-e347f.firebasestorage.app",
-  messagingSenderId: "25742129852",
-  appId: "1:25742129852:web:4de8d318d167a1db7aaeb9",
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGE_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
