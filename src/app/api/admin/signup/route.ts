@@ -44,19 +44,11 @@ export async function POST(request: NextRequest) {
       role: "ADMIN",
     });
 
-    // TODO: Send confirmation email here
-    // await sendConfirmationEmail(admin.email, admin.id)
-
     return NextResponse.json(
       {
         success:
-          "Admin account created successfully. Please check your email to confirm your account.",
-        admin: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
-        },
+          "Admin account created successfully. Please verify your account.",
+        redirectTo: `/admin/verify?email=${encodeURIComponent(email)}`,
       },
       { status: 201 }
     );
