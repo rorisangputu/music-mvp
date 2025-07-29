@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function AdminSignup() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function AdminSignup() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,9 +31,14 @@ export default function AdminSignup() {
 
       const data = await response.json();
 
+      // In the handleSubmit function, after successful response:
       if (response.ok) {
         setMessage({ type: "success", text: data.success });
         setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+        // Redirect to verification page
+        setTimeout(() => {
+          router.push(data.redirectTo);
+        }, 1500);
       } else {
         setMessage({ type: "error", text: data.error });
       }
