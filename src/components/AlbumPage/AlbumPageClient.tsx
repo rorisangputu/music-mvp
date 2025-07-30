@@ -143,13 +143,21 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
         <div className="flex justify-between items-center mb-5">
           <h1 className="text-xl font-semibold">Album</h1>
           {isAdmin && album && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isDeleting}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {isDeleting ? "Deleting..." : "Delete Album"}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push(`/admin/albums/${albumId}/edit`)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-medium"
+              >
+                Edit Album
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {isDeleting ? "Deleting..." : "Delete Album"}
+              </button>
+            </div>
           )}
         </div>
 
