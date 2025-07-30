@@ -1,7 +1,7 @@
 // app/albums/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Link from "next/link";
@@ -29,7 +29,15 @@ type Album = {
   genre?: string;
 };
 
-export default function AlbumsPage() {
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AlbumsPage />
+    </Suspense>
+  );
+}
+
+const AlbumsPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -173,4 +181,4 @@ export default function AlbumsPage() {
       </div>
     </div>
   );
-}
+};

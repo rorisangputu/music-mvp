@@ -38,7 +38,7 @@ type Album = {
   genre?: string;
 };
 
-export const convertSecondsToMinutes = (seconds: number): string => {
+const convertSecondsToMinutes = (seconds: number): string => {
   if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0)
     return "0:00";
 
