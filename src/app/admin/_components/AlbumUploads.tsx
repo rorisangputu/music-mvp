@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { uploadAlbum, CATEGORIES, GENRES, MOODS } from "@/lib/music-upload";
 import { AlbumMetadata, UploadProgress } from "@/types/music";
+import Link from "next/link";
 
 export default function AlbumUpload() {
   const [albumData, setAlbumData] = useState<
@@ -21,6 +22,7 @@ export default function AlbumUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [albumId, setAlbumId] = useState("");
 
   const handleTrackFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -57,6 +59,7 @@ export default function AlbumUpload() {
         type: "success",
         text: `Album uploaded successfully! Album ID: ${result.albumId}`,
       });
+      setAlbumId(result.albumId);
 
       // Reset form
       setAlbumData({
@@ -291,6 +294,16 @@ export default function AlbumUpload() {
             }`}
           >
             {message.text}
+            {message.type === "success" && albumId && (
+              <div className="mt-2">
+                <Link
+                  href={`/albums/${albumId}`}
+                  className="underline text-blue-600"
+                >
+                  View Album
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
