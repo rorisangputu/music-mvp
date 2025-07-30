@@ -1,7 +1,9 @@
+// app/admin/dashboard/page.tsx
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
 import Link from "next/link";
+import LibraryOverview from "../_components/LibraryOverview";
+import AlbumsList from "../_components/AlbumsList";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -29,14 +31,14 @@ export default async function AdminDashboard() {
               <span className="text-sm text-gray-700">
                 Welcome, {session.user?.name}
               </span>
-              <form action={handleSignOut}>
+              {/* <form action={handleSignOut}>
                 <button
                   type="submit"
                   className="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700"
                 >
                   Sign Out
                 </button>
-              </form>
+              </form> */}
             </div>
           </div>
         </div>
@@ -133,29 +135,25 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          {/* Stats Overview */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Library Overview
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">--</div>
-                <div className="text-sm text-gray-500">Total Albums</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">--</div>
-                <div className="text-sm text-gray-500">Total Tracks</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">--</div>
-                <div className="text-sm text-gray-500">Storage Used</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">--</div>
-                <div className="text-sm text-gray-500">Recent Uploads</div>
-              </div>
+          {/* Library Overview Stats */}
+          <div className="mb-8">
+            <LibraryOverview />
+          </div>
+
+          {/* Albums List Section */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-gray-900">
+                Recent Albums
+              </h2>
+              <Link
+                href="/admin/library"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                View All →
+              </Link>
             </div>
+            <AlbumsList />
           </div>
         </div>
       </main>
