@@ -38,6 +38,15 @@ type Album = {
   genre?: string;
 };
 
+export const convertSecondsToMinutes = (seconds: number): string => {
+  if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0)
+    return "0:00";
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};
+
 export default function AlbumPage() {
   const { albumId } = useParams();
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -73,7 +82,7 @@ export default function AlbumPage() {
           duration:
             docData.duration instanceof Timestamp
               ? formatDuration(docData.duration)
-              : docData.duration,
+              : convertSecondsToMinutes(docData.duration),
         } as Track;
       });
       setTracks(data);
