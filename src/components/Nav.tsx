@@ -1,45 +1,76 @@
-import { Menu } from "lucide-react";
+// app/_components/Nav.tsx
+import { auth, signOut } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
 
-const Nav = () => {
+export default async function Nav() {
+  const session = await auth();
+  const user = session?.user;
+  console.log(session);
+
+  async function handleSignOut() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
+
   return (
     <div className="w-[90%] xl:w-[80%] mx-auto mt-7 text-white">
       <div className="flex items-center justify-between">
-        <div className="">
+        <div>
           <Image
-            src={
-              "https://cmmg.co.za/wp-content/uploads/2025/03/music-content-1-300x169.png"
-            }
+            src="https://cmmg.co.za/wp-content/uploads/2025/03/music-content-1-300x169.png"
             alt="cmmg"
             width={150}
             height={150}
           />
         </div>
+
         <div className="flex w-[60%]">
           <div className="w-full flex items-center justify-between">
-            <div className="flex">
-              <ul className="hidden md:flex space-x-4">
-                <li className="text-md">
-                  <Link href={"/"}>Home</Link>
+            <ul className="hidden md:flex space-x-4 text-md">
+              <li>
+                <Link href="/">Home</Link>
+              </li>
+              <li>
+                <Link href="/albums">Library</Link>
+              </li>
+              <li>
+                <Link href="/licensing">Licensing</Link>
+              </li>
+              {user?.type === "admin" && (
+                <li>
+                  <Link href="/admin/dashboard">Dashboard</Link>
                 </li>
-                <li className="text-md">
-                  <Link href={"/albums"}>Library</Link>
-                </li>
-                <li className="text-md">
-                  <Link href={"/licensing"}>Licensing</Link>
-                </li>
-              </ul>
-            </div>
-            <div className="hidden md:flex">
-              <Button className="text-md">Sign Up</Button>
-              <Button className="bg-[#ec7027] text-md text-black">
-                Sign In
-              </Button>
+              )}
+            </ul>
+
+            <div className="hidden md:flex items-center space-x-2">
+              {!user ? (
+                <>
+                  <Link href="/signup">
+                    <Button className="text-md">Sign Up</Button>
+                  </Link>
+                  <Link href="/signin">
+                    <Button className="bg-[#ec7027] text-md text-black">
+                      Sign In
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <form action={handleSignOut}>
+                  <Button
+                    type="submit"
+                    className="bg-red-600 text-white text-sm hover:bg-red-700"
+                  >
+                    Sign Out
+                  </Button>
+                </form>
+              )}
             </div>
           </div>
+
           <div className="flex md:hidden">
             <Menu size={33} />
           </div>
@@ -47,6 +78,4 @@ const Nav = () => {
       </div>
     </div>
   );
-};
-
-export default Nav;
+}
