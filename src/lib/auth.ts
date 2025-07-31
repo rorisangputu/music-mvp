@@ -13,7 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     Credentials({
-      name: "admin-login",
+      name: "login",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -43,6 +43,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               name: admin.name,
               role: admin.role,
               type: "admin",
+            };
+          }
+        }
+
+        if (loginType === "user") {
+          const user = await db.user.findUnique({
+            where: { email },
+          });
+
+          if (
+            user &&
+            user.isActive &&
+            user.isVerified &&
+            (await bcrypt.compare(password, user.password!))
+          ) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              type: "user",
             };
           }
         }
