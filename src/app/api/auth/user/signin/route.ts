@@ -43,7 +43,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check password
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "Password not set for this account" },
+        { status: 401 }
+      );
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
@@ -70,20 +76,20 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ ADMIN SIGNIN SUCCESS:");
     console.log(`📧 Email: ${email}`);
-    console.log(`👤 Name: ${admin.name}`);
-    console.log(`🎭 Role: ${admin.role}`);
+    console.log(`👤 Name: ${user.name}`);
+    console.log(`🎭 Role: ${user.role}`);
     console.log("=".repeat(50));
 
     return NextResponse.json(
       {
         success: "Sign in successful",
         admin: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
         },
-        redirectTo: "/admin/dashboard",
+        redirectTo: "/admin/dasuserhboard",
       },
       { status: 200 }
     );
