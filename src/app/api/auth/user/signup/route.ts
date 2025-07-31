@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import db from "@/db/db";
-import { addMinutes } from "date-fns";
 import { signUpSchema } from "@/lib/validationSchemas";
 import { createUser, getUserByEmail } from "@/lib/user";
 
