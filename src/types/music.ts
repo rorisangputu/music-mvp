@@ -31,3 +31,42 @@ export interface UploadProgress {
   status: "pending" | "uploading" | "completed" | "error";
   error?: string;
 }
+
+export const CATEGORIES = [
+  "Cinematic",
+  "Corporate",
+  "Electronic",
+  "Hip Hop",
+  "Jazz",
+  "Rock",
+  "Pop",
+  "Ambient",
+  "Classical",
+  "World Music",
+];
+
+export const GENRES = [
+  "Orchestral",
+  "Piano",
+  "Guitar",
+  "Synthesizer",
+  "Drums",
+  "Vocals",
+  "Instrumental",
+  "Upbeat",
+  "Mellow",
+  "Dramatic",
+];
+
+export const MOODS = [
+  "Happy",
+  "Sad",
+  "Energetic",
+  "Calm",
+  "Dramatic",
+  "Romantic",
+  "Suspenseful",
+  "Uplifting",
+  "Dark",
+  "Peaceful",
+];
