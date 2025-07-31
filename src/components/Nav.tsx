@@ -8,7 +8,6 @@ import { Button } from "./ui/button";
 export default async function Nav() {
   const session = await auth();
   const user = session?.user;
-  console.log(session);
 
   async function handleSignOut() {
     "use server";
@@ -44,18 +43,24 @@ export default async function Nav() {
                   <Link href="/admin/dashboard">Dashboard</Link>
                 </li>
               )}
+              {user?.type === "user" && (
+                <li>
+                  <Link href="/profile">Profile</Link>
+                </li>
+              )}
             </ul>
 
-            <div className="hidden md:flex items-center space-x-2">
+            <div className=" md:flex items-center space-x-2">
               {!user ? (
                 <>
                   <Link href="/signup">
                     <Button className="text-md">Sign Up</Button>
                   </Link>
-                  <Link href="/signin">
-                    <Button className="bg-[#ec7027] text-md text-black">
-                      Sign In
-                    </Button>
+                  <Link
+                    href="/signin"
+                    className="bg-[#ec7027] text-md text-black px-3 py-2 font-semibold"
+                  >
+                    Sign In
                   </Link>
                 </>
               ) : (
