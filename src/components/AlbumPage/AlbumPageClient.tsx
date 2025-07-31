@@ -52,9 +52,13 @@ const convertSecondsToMinutes = (seconds: number): string => {
 
 interface AlbumPageClientProps {
   isAdmin: boolean | null;
+  isUser: boolean | null;
 }
 
-export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
+export default function AlbumPageClient({
+  isAdmin,
+  isUser,
+}: AlbumPageClientProps) {
   const { albumId } = useParams();
   const router = useRouter();
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -135,6 +139,52 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
     }
 
     setIsDeleting(false);
+  };
+
+  // User action handlers
+  const handleAddToFavorites = async (track: Track) => {
+    try {
+      const response = await fetch("/api/user/favourites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          trackId: track.id,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Track added to favorites!");
+      } else {
+        const error = await response.json();
+        alert(error.message || "Failed to add to favorites");
+      }
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      alert("Failed to add to favorites. Please try again.");
+    }
+  };
+
+  const handleDownload = (track: Track) => {
+    // Create a download link for the audio file
+    const link = document.createElement("a");
+    link.href = track.audioUrl;
+    link.download = `${track.title} - ${track.composer}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadCueSheet = (track: Track) => {
+    if (track.cueSheetUrl) {
+      const link = document.createElement("a");
+      link.href = track.cueSheetUrl;
+      link.download = `${track.title} - cue sheet.cue`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
@@ -237,16 +287,21 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
           {tracks.map((track) => (
             <div
               key={track.id}
-              className="border p-4 rounded shadow cursor-pointer hover:shadow-md transition"
-              onClick={() => setSelectedTrack(track)}
+              className="border p-4 rounded shadow hover:shadow-md transition space-y-3"
             >
               <h2 className="text-lg font-semibold">{track.title}</h2>
               <p className="text-sm text-gray-600">
                 By {track.composer} — {track.duration}
               </p>
-              <audio controls className="mt-2 w-full">
+              <audio controls controlsList="nodownload" className="mt-2 w-full">
                 <source src={track.audioUrl} type="audio/mpeg" />
               </audio>
+              <button
+                className="py-2 px-3 bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
+                onClick={() => setSelectedTrack(track)}
+              >
+                Options
+              </button>
             </div>
           ))}
 
@@ -277,7 +332,11 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
                   Duration: {selectedTrack.duration}
                 </p>
 
-                <audio controls className="w-full mb-4">
+                <audio
+                  controls
+                  controlsList="nodownload"
+                  className="w-full mb-4"
+                >
                   <source src={selectedTrack.audioUrl} type="audio/mpeg" />
                 </audio>
 
@@ -289,16 +348,48 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
                     <strong>Genre:</strong> {selectedTrack.genre}
                   </li>
                   <li>
-                    <strong>BPM:</strong> {selectedTrack.bpm}
-                  </li>
-                  <li>
-                    <strong>Tags:</strong> {selectedTrack.tags.join(", ")}
-                  </li>
-                  <li>
                     <strong>Date Added:</strong> {selectedTrack.createdAt}
                   </li>
                 </ul>
 
+                {/* User Actions - Only show if user is signed in */}
+                {isUser && (
+                  <div className="mt-4 space-y-2">
+                    <div className="border-t pt-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">
+                        Actions
+                      </h3>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => handleAddToFavorites(selectedTrack)}
+                          className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium"
+                        >
+                          Add to Favorites
+                        </button>
+
+                        {selectedTrack.downloadable && (
+                          <button
+                            onClick={() => handleDownload(selectedTrack)}
+                            className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium"
+                          >
+                            Download Track
+                          </button>
+                        )}
+
+                        {selectedTrack.cueSheetUrl && (
+                          <button
+                            onClick={() =>
+                              handleDownloadCueSheet(selectedTrack)
+                            }
+                            className="w-full py-2 px-3 bg-black text-white rounded transition-colors text-sm font-medium"
+                          >
+                            📋 Download Cue Sheet
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 flex justify-between items-center">
                   {selectedTrack.cueSheetUrl && (
                     <a
@@ -310,14 +401,6 @@ export default function AlbumPageClient({ isAdmin }: AlbumPageClientProps) {
                       View Cue Sheet
                     </a>
                   )}
-                  <a
-                    href={`/license?trackId=${
-                      selectedTrack.id
-                    }&trackTitle=${encodeURIComponent(selectedTrack.title)}`}
-                    className="text-green-600 underline"
-                  >
-                    Request License
-                  </a>
                 </div>
               </div>
             </div>
