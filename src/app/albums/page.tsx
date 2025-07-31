@@ -9,16 +9,7 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import debounce from "lodash.debounce";
 import { useMemo } from "react";
-
-const CATEGORIES = ["TV", "Film", "Corporate", "Podcast", "Jingles", "VOD"];
-const GENRES = [
-  "Cinematic",
-  "Jazz",
-  "Hip-Hop",
-  "Ambient",
-  "Electronic",
-  "Rock",
-];
+import { CATEGORIES, GENRES } from "@/types/music";
 
 type Album = {
   id: string;
@@ -70,7 +61,7 @@ const AlbumsPage = () => {
     const fetchAlbums = async () => {
       const querySnapshot = await getDocs(collection(db, "albums"));
       const data = querySnapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Album)
+        (doc) => ({ id: doc.id, ...doc.data() }) as Album
       );
       setAlbums(data);
     };
