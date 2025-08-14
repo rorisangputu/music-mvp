@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { Resend } from "resend";
 
 // Initialize Resend with your API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+//const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function getUserByEmail(email: string) {
   return await db.user.findUnique({
@@ -17,73 +17,73 @@ function generateVerificationCode(): string {
 }
 
 // Send verification email
-async function sendVerificationEmail(
-  email: string,
-  code: string,
-  name: string
-) {
-  try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!, // e.g., 'noreply@yourdomain.com'
-      to: [email],
-      subject: "Verify Your Account",
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #333; margin-bottom: 10px;">Verify Your Account</h1>
-          </div>
-          
-          <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 20px;">
-            <h2 style="color: #333; margin-bottom: 15px;">Hello ${name}!</h2>
-            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Thank you for signing up! Please use the verification code below to complete your account setup:
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <span style="display: inline-block; background-color: #007bff; color: white; font-size: 32px; font-weight: bold; padding: 15px 30px; border-radius: 6px; letter-spacing: 2px;">
-                ${code}
-              </span>
-            </div>
-            
-            <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
-              This code will expire in 24 hours for your security.
-            </p>
-            
-            <p style="color: #666; line-height: 1.6;">
-              If you didn't create an account, you can safely ignore this email.
-            </p>
-          </div>
-          
-          <div style="text-align: center; color: #888; font-size: 14px;">
-            <p>This is an automated message, please do not reply to this email.</p>
-          </div>
-        </div>
-      `,
-      text: `
-Hello ${name}!
+// async function sendVerificationEmail(
+//   email: string,
+//   code: string,
+//   name: string
+// ) {
+//   try {
+//     const { data, error } = await resend.emails.send({
+//       from: process.env.RESEND_FROM_EMAIL!, // e.g., 'noreply@yourdomain.com'
+//       to: [email],
+//       subject: "Verify Your Account",
+//       html: `
+//         <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+//           <div style="text-align: center; margin-bottom: 30px;">
+//             <h1 style="color: #333; margin-bottom: 10px;">Verify Your Account</h1>
+//           </div>
 
-Thank you for signing up! Please use the verification code below to complete your account setup:
+//           <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 20px;">
+//             <h2 style="color: #333; margin-bottom: 15px;">Hello ${name}!</h2>
+//             <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+//               Thank you for signing up! Please use the verification code below to complete your account setup:
+//             </p>
 
-Verification Code: ${code}
+//             <div style="text-align: center; margin: 30px 0;">
+//               <span style="display: inline-block; background-color: #007bff; color: white; font-size: 32px; font-weight: bold; padding: 15px 30px; border-radius: 6px; letter-spacing: 2px;">
+//                 ${code}
+//               </span>
+//             </div>
 
-This code will expire in 24 hours for your security.
+//             <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+//               This code will expire in 24 hours for your security.
+//             </p>
 
-If you didn't create an account, you can safely ignore this email.
-      `,
-    });
+//             <p style="color: #666; line-height: 1.6;">
+//               If you didn't create an account, you can safely ignore this email.
+//             </p>
+//           </div>
 
-    if (error) {
-      console.error("❌ Email sending failed:", error);
-      return { success: false, error: error.message };
-    }
+//           <div style="text-align: center; color: #888; font-size: 14px;">
+//             <p>This is an automated message, please do not reply to this email.</p>
+//           </div>
+//         </div>
+//       `,
+//       text: `
+// Hello ${name}!
 
-    console.log("✅ Verification email sent successfully:", data?.id);
-    return { success: true, emailId: data?.id };
-  } catch (error) {
-    console.error("❌ Email sending error:", error);
-    return { success: false, error: "Failed to send verification email" };
-  }
-}
+// Thank you for signing up! Please use the verification code below to complete your account setup:
+
+// Verification Code: ${code}
+
+// This code will expire in 24 hours for your security.
+
+// If you didn't create an account, you can safely ignore this email.
+//       `,
+//     });
+
+//     if (error) {
+//       console.error("❌ Email sending failed:", error);
+//       return { success: false, error: error.message };
+//     }
+
+//     console.log("✅ Verification email sent successfully:", data?.id);
+//     return { success: true, emailId: data?.id };
+//   } catch (error) {
+//     console.error("❌ Email sending error:", error);
+//     return { success: false, error: "Failed to send verification email" };
+//   }
+// }
 
 export async function createUser(data: {
   name: string;
@@ -108,7 +108,7 @@ export async function createUser(data: {
     },
   });
 
-  // // Send verification email
+  // Send verification email
   // const emailResult = await sendVerificationEmail(
   //   data.email,
   //   verificationCode,
@@ -207,26 +207,26 @@ export async function resendVerificationCode(email: string) {
   });
 
   // Send new verification email
-  const emailResult = await sendVerificationEmail(
-    email,
-    verificationCode,
-    user.name
-  );
+  // const emailResult = await sendVerificationEmail(
+  //   email,
+  //   verificationCode,
+  //   user.name
+  // );
 
-  if (!emailResult.success) {
-    console.error(
-      "⚠️ Code generated but email failed to send:",
-      emailResult.error
-    );
-    // Still return success since the code was updated in DB
-  }
+  // if (!emailResult.success) {
+  //   console.error(
+  //     "⚠️ Code generated but email failed to send:",
+  //     emailResult.error
+  //   );
+  //   // Still return success since the code was updated in DB
+  // }
 
   // Console log for testing
   console.log("🔄 RESEND VERIFICATION CODE:");
   console.log(`📧 Email: ${email}`);
   console.log(`🔢 New Code: ${verificationCode}`);
   console.log(`⏰ Expires: ${verificationCodeExpires}`);
-  console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
+  //console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
   console.log("=".repeat(50));
 
   return { success: true, verificationCode };
