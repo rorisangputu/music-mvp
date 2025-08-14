@@ -15,7 +15,7 @@ type NavUser = {
 export default async function Nav() {
   const session = await auth();
   const user = session?.user as NavUser | undefined;
-  console.log(user);
+  //console.log(user);
 
   async function handleSignOut() {
     "use server";
