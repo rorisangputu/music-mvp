@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    const user = await getUserByEmail(session.user.email);
+    const userEmail = session.user.email as string;
+    const user = await getUserByEmail(userEmail);
 
     if (!user) {
       return NextResponse.json({
@@ -94,7 +95,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-    const user = await getUserByEmail(session.user.email);
+    const userEmail = session.user.email as string;
+    const user = await getUserByEmail(userEmail);
 
     if (!user) {
       return NextResponse.json({
@@ -110,7 +112,7 @@ export async function GET(request: NextRequest) {
         createdAt: "desc",
       },
     });
-    
+
 
     return NextResponse.json(
       {
@@ -142,7 +144,8 @@ export async function DELETE(request: NextRequest) {
         { status: 401 }
       );
     }
-    const user = await getUserByEmail(session.user.email);
+    const userEmail = session.user.email as string;
+    const user = await getUserByEmail(userEmail);
 
     if (!user) {
       return NextResponse.json({
