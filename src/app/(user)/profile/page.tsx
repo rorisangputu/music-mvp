@@ -11,8 +11,9 @@ export default async function ProfilePage() {
   if (!session?.user?.email) {
     redirect("/signin");
   }
+  const userEmail = session.user.email as string;
 
-  const user = await getUserByEmail(session.user.email);
+  const user = await getUserByEmail(userEmail);
 
   if (!user) {
     redirect("/signin");
