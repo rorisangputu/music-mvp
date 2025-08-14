@@ -5,9 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircleIcon } from "lucide-react";
 
-export default async function VerifyPage() {
-  const searchParams = useSearchParams();
-  const email = await searchParams.get("email");
+export default function VerifyPage({
+  searchParams,
+}: {
+  searchParams: { email?: string };
+}) {
+  const email = searchParams.email;
 
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
