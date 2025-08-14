@@ -80,7 +80,7 @@ export async function deleteAlbum(
     const tracks = tracksSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as TrackData[];
 
     console.log(`🎵 Found ${tracks.length} tracks to delete`);
 
