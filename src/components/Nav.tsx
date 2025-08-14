@@ -5,9 +5,17 @@ import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
 
+type NavUser = {
+  name: String;
+  email: String;
+  id: String;
+  type: String;
+}
+
 export default async function Nav() {
   const session = await auth();
-  const user = session?.user;
+  const user = session?.user as NavUser | undefined;
+  console.log(user);
 
   async function handleSignOut() {
     "use server";
