@@ -1,13 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import free from "../../../public/rat.webp";
-import middle from "../../../public/middle.webp";
-import lost from "../../../public/lost.webp";
-import inmyhead from "../../../public/inmyhead.webp";
-import band from "../../../public/band.webp";
-import balads from "../../../public/balads.webp";
 import Image from "next/image";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 
 import {
   Carousel,
@@ -17,42 +15,82 @@ import {
   CarouselPrevious,
 } from "../ui/carousel";
 
+type Album = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  coverImage?: string;
+  genre?: string;
+  artist?: string;
+  createdAt?: any; // For ordering by creation date
+};
+
 type Props = {};
 
-const Albums = [
-  {
-    title: "Free",
-    image: free,
-    artist: "Leighton Lucas",
-  },
-  {
-    title: "Nocturne Ballads",
-    image: balads,
-    artist: "Crystal Lake",
-  },
-  {
-    title: "BandOf4",
-    image: band,
-    artist: "Gilbert Winter",
-  },
-  {
-    title: "In My Head",
-    image: inmyhead,
-    artist: "max.exe",
-  },
-  {
-    title: "Mid East",
-    image: middle,
-    artist: "Kyle Wright",
-  },
-  {
-    title: "Lost Highway",
-    image: lost,
-    artist: "Amanda Brown",
-  },
-];
-
 const NewReleases = (props: Props) => {
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLatestAlbums = async () => {
+      try {
+        // Create a query to get the latest albums (ordered by creation date, limited to 6)
+        const albumsQuery = query(
+          collection(db, "albums"),
+          orderBy("createdAt", "desc"),
+          limit(6)
+        );
+
+        const querySnapshot = await getDocs(albumsQuery);
+        const data = querySnapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() }) as Album
+        );
+
+        setAlbums(data);
+      } catch (error) {
+        console.error("Error fetching albums:", error);
+        // Fallback to getting all albums if orderBy fails (in case createdAt field doesn't exist)
+        try {
+          const fallbackQuery = query(collection(db, "albums"), limit(6));
+          const querySnapshot = await getDocs(fallbackQuery);
+          const data = querySnapshot.docs.map(
+            (doc) => ({ id: doc.id, ...doc.data() }) as Album
+          );
+          setAlbums(data);
+        } catch (fallbackError) {
+          console.error("Error with fallback query:", fallbackError);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestAlbums();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full py-10 lg:py-12">
+        <div className="w-[90%] lg:w-[80%] mx-auto">
+          <div className="space-y-5">
+            <div className="flex justify-between">
+              <h1 className="text-xl lg:text-2xl font-semibold">Latest Albums</h1>
+              <Button className="bg-transparent text-black shadow-none">
+                <Link href={"/albums"} className="uppercase">
+                  Show all
+                </Link>
+              </Button>
+            </div>
+            <div className="text-center py-8">
+              <p>Loading latest albums...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full py-10 lg:py-12">
       <div className="w-[90%] lg:w-[80%] mx-auto">
@@ -66,34 +104,47 @@ const NewReleases = (props: Props) => {
             </Button>
           </div>
 
-          {/* Carousel */}
-          <Carousel>
-            <CarouselContent className="-ml-1">
-              {Albums.map((album, index) => (
-                <CarouselItem
-                  key={index}
-                  className="pl-1 basis-1/2 md:basis-1/3 lg:basis-1/4"
-                >
-                  <div className="space-y-3">
-                    <Image
-                      src={album.image}
-                      alt={album.title}
-                      width={300}
-                      height={300}
-                    />
-                    <div>
-                      <p className="uppercase font-semibold">{album.title}</p>
-                      <p className="text-xs font-light uppercase">
-                        {album.artist}
-                      </p>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
+          {albums.length > 0 ? (
+            <Carousel>
+              <CarouselContent className="-ml-1">
+                {albums.map((album) => (
+                  <CarouselItem
+                    key={album.id}
+                    className="pl-1 basis-1/2 md:basis-1/3 lg:basis-1/4"
+                  >
+                    <Link href={`/albums/${album.id}`}>
+                      <div className="space-y-3 cursor-pointer hover:opacity-80 transition-opacity">
+                        <Image
+                          src={album.coverImage || "/placeholder-album.jpg"}
+                          alt={album.title}
+                          width={300}
+                          height={300}
+                          className="rounded-lg object-cover"
+                        />
+                        <div>
+                          <p className="uppercase font-semibold">{album.title}</p>
+                          <p className="text-xs font-light uppercase">
+                            {album.artist || "Unknown Artist"}
+                          </p>
+                          {album.genre && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {album.genre}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No albums found.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
