@@ -88,7 +88,7 @@ const AlbumsPage = () => {
   });
 
   return (
-    <div className="w-full bg-gray-50 py-10 h-screen">
+    <div className="w-full bg-gray-50 py-10 min-h-screen">
       <div className="w-[90%] lg:w-[80%] mx-auto ">
         <h1 className="text-2xl font-bold mb-4">Album Library</h1>
         {/* Search + Filters */}
@@ -145,7 +145,7 @@ const AlbumsPage = () => {
         </div>
 
         {/* Album Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {filteredAlbums.map((album) => (
             <Link
               key={album.id}
@@ -155,8 +155,8 @@ const AlbumsPage = () => {
               <Image
                 src={album.coverImage || ""}
                 alt={album.title}
-                width={400}
-                height={400}
+                width={300}
+                height={300}
               />
               <div>
                 <h2 className="text-lg font-semibold">{album.title}</h2>
