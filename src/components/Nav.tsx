@@ -46,7 +46,6 @@ export default async function Nav() {
               <li>
                 <Link href="/licensing">Licensing</Link>
               </li>
-
             </ul>
 
             <div className=" md:flex items-center space-x-2">
@@ -68,9 +67,7 @@ export default async function Nav() {
                     <Link href="/admin/dashboard">Dashboard</Link>
                   )}
                   {user?.type === "user" && (
-                    <li>
-                      <Link href="/profile">Profile</Link>
-                    </li>
+                    <Link href="/profile">Profile</Link>
                   )}
                   <form action={handleSignOut}>
                     <Button
