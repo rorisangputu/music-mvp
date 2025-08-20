@@ -39,6 +39,7 @@ type Album = {
   category: string;
   coverImage?: string;
   genre?: string;
+  cueSheet: string;
 };
 
 const convertSecondsToMinutes = (seconds: number): string => {
@@ -102,7 +103,11 @@ export default function AlbumPageClient({
               : convertSecondsToMinutes(docData.duration),
         } as Track;
       });
-      setTracks(data);
+      // Extract leading number from title (if present), otherwise fallback to Infinity
+
+      const sorted = data.sort((a, b) => a.title.localeCompare(b.title));
+      setTracks(sorted);
+
     };
 
     if (albumId) {
@@ -132,9 +137,8 @@ export default function AlbumPageClient({
     } catch (error) {
       setDeleteMessage({
         type: "error",
-        text: `Delete failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        text: `Delete failed: ${error instanceof Error ? error.message : "Unknown error"
+          }`,
       });
     }
 
@@ -186,7 +190,7 @@ export default function AlbumPageClient({
       document.body.removeChild(link);
     }
   };
-
+  console.log(album);
   return (
     <div className="w-full bg-gray-50 py-10">
       <div className="w-[90%] lg:w-[80%] mx-auto">
@@ -220,17 +224,22 @@ export default function AlbumPageClient({
                 className="w-full md:w-60 rounded shadow object-cover"
               />
             )}
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{album.title}</h1>
-              <p className="text-gray-700 text-sm mb-1">
-                <strong>Category:</strong> {album.category}
-              </p>
-              {album.genre && (
+            <div className="flex flex-col space-y-5">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{album.title}</h1>
                 <p className="text-gray-700 text-sm mb-1">
-                  <strong>Genre:</strong> {album.genre}
+                  <strong>Category:</strong> {album.category}
                 </p>
-              )}
-              <p className="text-gray-600 mt-2">{album.description}</p>
+                {album.genre && (
+                  <p className="text-gray-700 text-sm mb-1">
+                    <strong>Genre:</strong> {album.genre}
+                  </p>
+                )}
+                <p className="text-gray-600 mt-2">{album.description}</p>
+              </div>
+              {isUser ?? <div>
+                <a href={album.cueSheet} className="bg-orange-600 py-2 px-3 text-white">Cue Sheet</a>
+              </div>}
             </div>
           </div>
         )}
@@ -244,21 +253,20 @@ export default function AlbumPageClient({
                 <div className="flex justify-between text-sm mb-1">
                   <span>{progress.fileName}</span>
                   <span
-                    className={`font-medium ${
-                      progress.status === "completed"
-                        ? "text-green-600"
-                        : progress.status === "error"
+                    className={`font-medium ${progress.status === "completed"
+                      ? "text-green-600"
+                      : progress.status === "error"
                         ? "text-red-600"
                         : "text-blue-600"
-                    }`}
+                      }`}
                   >
                     {progress.status === "completed"
                       ? "✅"
                       : progress.status === "error"
-                      ? "❌"
-                      : progress.status === "deleting"
-                      ? "🗑️"
-                      : "⏳"}
+                        ? "❌"
+                        : progress.status === "deleting"
+                          ? "🗑️"
+                          : "⏳"}
                     {progress.status}
                   </span>
                 </div>
@@ -273,11 +281,10 @@ export default function AlbumPageClient({
         {/* Delete Message */}
         {deleteMessage.text && (
           <div
-            className={`p-4 rounded-md mb-6 ${
-              deleteMessage.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+            className={`p-4 rounded-md mb-6 ${deleteMessage.type === "success"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+              }`}
           >
             {deleteMessage.text}
           </div>
