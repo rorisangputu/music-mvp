@@ -93,6 +93,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/auth/signin",
     error: "/auth/error",
   },
+  cookies: {
+    sessionToken: {
+      name: "cmmg-music.session-token", // unique name for app 1
+    },
+  },
   session: {
     strategy: "jwt",
   },
