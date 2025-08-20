@@ -29,8 +29,8 @@ export default async function Nav() {
           <Image
             src="https://cmmg.co.za/wp-content/uploads/2025/03/music-content-1-300x169.png"
             alt="cmmg"
-            width={150}
-            height={150}
+            width={120}
+            height={120}
           />
         </div>
 
@@ -46,23 +46,14 @@ export default async function Nav() {
               <li>
                 <Link href="/licensing">Licensing</Link>
               </li>
-              {user?.type === "admin" && (
-                <li>
-                  <Link href="/admin/dashboard">Dashboard</Link>
-                </li>
-              )}
-              {user?.type === "user" && (
-                <li>
-                  <Link href="/profile">Profile</Link>
-                </li>
-              )}
+
             </ul>
 
             <div className=" md:flex items-center space-x-2">
               {!user ? (
-                <>
+                <div className="space-x-5">
                   <Link href="/signup">
-                    <Button className="text-md">Sign Up</Button>
+                    Sign Up
                   </Link>
                   <Link
                     href="/signin"
@@ -70,16 +61,27 @@ export default async function Nav() {
                   >
                     Sign In
                   </Link>
-                </>
+                </div>
               ) : (
-                <form action={handleSignOut}>
-                  <Button
-                    type="submit"
-                    className="bg-red-600 text-white text-sm hover:bg-red-700"
-                  >
-                    Sign Out
-                  </Button>
-                </form>
+                <div className="flex flex-row items-center space-x-5 ">
+                  {user?.type === "admin" && (
+                    <Link href="/admin/dashboard">Dashboard</Link>
+                  )}
+                  {user?.type === "user" && (
+                    <li>
+                      <Link href="/profile">Profile</Link>
+                    </li>
+                  )}
+                  <form action={handleSignOut}>
+                    <Button
+                      type="submit"
+                      className="bg-red-600 text-white text-sm hover:bg-red-700"
+                    >
+                      Sign Out
+                    </Button>
+                  </form>
+                </div>
+
               )}
             </div>
           </div>
