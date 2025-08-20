@@ -6,6 +6,7 @@ export interface AlbumMetadata {
   description: string;
   releaseDate: string;
   coverImage?: string;
+  cueSheet?: string;
   trackIds: string[];
 }
 

@@ -18,6 +18,7 @@ export default function AlbumUpload() {
   });
 
   const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [cueSheet, setCueSheet] = useState<File | null>();
   const [trackFiles, setTrackFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([]);
@@ -36,7 +37,7 @@ export default function AlbumUpload() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!coverImage || trackFiles.length === 0) {
+    if (!coverImage || !cueSheet || trackFiles.length === 0) {
       setMessage({
         type: "error",
         text: "Please select cover image and tracks",
@@ -51,6 +52,7 @@ export default function AlbumUpload() {
       const result = await uploadAlbum(
         albumData,
         coverImage,
+        cueSheet,
         trackFiles,
         setUploadProgress
       );
@@ -71,14 +73,14 @@ export default function AlbumUpload() {
         releaseDate: "",
       });
       setCoverImage(null);
+      setCueSheet(null);
       setTrackFiles([]);
       setUploadProgress([]);
     } catch (error) {
       setMessage({
         type: "error",
-        text: `Upload failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        text: `Upload failed: ${error instanceof Error ? error.message : "Unknown error"
+          }`,
       });
     }
 
@@ -203,6 +205,18 @@ export default function AlbumUpload() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              CueSheet
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              required
+              onChange={(e) => setCueSheet(e.target.files?.[0] || null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -247,33 +261,31 @@ export default function AlbumUpload() {
                 <div className="flex justify-between text-sm mb-1">
                   <span>{progress.fileName}</span>
                   <span
-                    className={`font-medium ${
-                      progress.status === "completed"
-                        ? "text-green-600"
-                        : progress.status === "error"
+                    className={`font-medium ${progress.status === "completed"
+                      ? "text-green-600"
+                      : progress.status === "error"
                         ? "text-red-600"
                         : "text-blue-600"
-                    }`}
+                      }`}
                   >
                     {progress.status === "completed"
                       ? "✅"
                       : progress.status === "error"
-                      ? "❌"
-                      : progress.status === "uploading"
-                      ? "⬆️"
-                      : "⏳"}
+                        ? "❌"
+                        : progress.status === "uploading"
+                          ? "⬆️"
+                          : "⏳"}
                     {progress.status}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      progress.status === "completed"
-                        ? "bg-green-500"
-                        : progress.status === "error"
+                    className={`h-2 rounded-full transition-all duration-300 ${progress.status === "completed"
+                      ? "bg-green-500"
+                      : progress.status === "error"
                         ? "bg-red-500"
                         : "bg-blue-500"
-                    }`}
+                      }`}
                     style={{ width: `${progress.progress}%` }}
                   />
                 </div>
@@ -287,11 +299,10 @@ export default function AlbumUpload() {
 
         {message.text && (
           <div
-            className={`p-4 rounded-md ${
-              message.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+            className={`p-4 rounded-md ${message.type === "success"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+              }`}
           >
             {message.text}
             {message.type === "success" && albumId && (
