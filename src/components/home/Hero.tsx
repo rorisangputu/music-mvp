@@ -1,17 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import heroIllustration from "../../../public/Music-bro.png";
+import heroIllustration from "../../../public/note.png";
 import { Check } from "lucide-react";
 type Props = {};
 
 const Hero = (props: Props) => {
   return (
-    <section className="relative w-[90%] xl:w-[80%] mx-auto">
+    <section className="relative w-[90%] xl:w-[80%] mx-auto py-20">
       {/* CONTENT */}
-      <div className="w-full space-y-5 z-10 relative rounded-md grid grid-cols-1 lg:grid-cols-2 justify-between items-center">
+      <div className="w-full z-10 relative rounded-md grid grid-cols-1 lg:grid-cols-2 justify-between items-center">
         {/* Hero Content */}
-        <div className="">
+        <div className=" h-full flex flex-col justify-end">
           <div className="space-y-8">
             <h1 className="text-slate-100 text-6xl font-semibold">
               <span className="text-orange-500">High-Quality</span> Sound and
@@ -23,7 +23,7 @@ const Hero = (props: Props) => {
               audio quality for their projects
             </p>
           </div>
-          <div className="flex gap-3 my-10">
+          <div className="flex gap-3 my-10 ">
             <Link
               href={"/albums"}
               className="bg-[#ec7027] text-black font-medium p-3 rounded-md"
@@ -53,8 +53,8 @@ const Hero = (props: Props) => {
           </div>
         </div>
         {/* Hero Image */}
-        <div className="hidden lg:flex">
-          <Image src={heroIllustration} alt="image" className="w-full" />
+        <div className="hidden lg:flex justify-center h-full">
+          <Image src={heroIllustration} alt="image" className="w-92" />
           {/* <a href="https://storyset.com/music">
             Music illustrations by Storyset
           </a> */}
