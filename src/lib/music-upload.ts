@@ -97,12 +97,15 @@ export function uploadFileToStorage(
 // Clean filename for title (remove extension, clean up)
 export function cleanTrackTitle(filename: string): string {
   return filename
-    .replace(/\.[^/.]+$/, "")       // remove extension
-    .replace(/[_-]+/g, " ")         // underscores/hyphens → space
-    .replace(/\s+/g, " ")           // collapse multiple spaces
+    .replace(/\.[^/.]+$/, "")              // remove extension
+    .replace(/[_-]+/g, " ")                // underscores/hyphens → space
+    .replace(/([a-z])([A-Z])/g, "$1 $2")   // split camelCase or mixed (StopUplifting -> Stop Uplifting)
+    .replace(/\s+/g, " ")                  // collapse multiple spaces
     .trim()
-    .replace(/\b\w/g, (l) => l.toUpperCase()); // capitalize each word
+    .replace(/\b\w/g, (l) => l.toUpperCase()) // capitalize each word
+    .replace(/\bCut(\d+)\b/i, "CUT$1");    // restore catalog code to uppercase
 }
+
 
 
 // Main album upload function
