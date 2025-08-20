@@ -136,7 +136,7 @@ export async function uploadAlbum(
     if (cueSheetFile.type !== "application/pdf") {
       throw new Error("Cue sheet must be a PDF file");
     }
-    console.log("📸 Uploading cover image...");
+    console.log("📸 Uploading cue sheet...");
     const cueSheetPath = `cueSheets/${albumId}_cueSheet.pdf`;
     const cueSheetUrl = await uploadFileToStorage(
       cueSheetFile,
