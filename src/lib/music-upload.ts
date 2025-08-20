@@ -97,15 +97,19 @@ export function uploadFileToStorage(
 // Clean filename for title (remove extension, clean up)
 export function cleanTrackTitle(filename: string): string {
   return filename
-    .replace(/\.[^/.]+$/, "") // Remove extension
-    .replace(/[-_]/g, " ") // Replace hyphens and underscores with spaces
-    .replace(/\b\w/g, (l) => l.toUpperCase()); // Capitalize first letter of each word
+    .replace(/\.[^/.]+$/, "")       // remove extension
+    .replace(/[_-]+/g, " ")         // underscores/hyphens → space
+    .replace(/\s+/g, " ")           // collapse multiple spaces
+    .trim()
+    .replace(/\b\w/g, (l) => l.toUpperCase()); // capitalize each word
 }
+
 
 // Main album upload function
 export async function uploadAlbum(
-  albumData: Omit<AlbumMetadata, "coverImage" | "trackIds">,
+  albumData: Omit<AlbumMetadata, "coverImage" | "cueSheet" | "trackIds">,
   coverImageFile: File,
+  cueSheetFile: File,
   trackFiles: File[],
   onProgress?: (progress: UploadProgress[]) => void
 ): Promise<{ albumId: string; trackIds: string[] }> {
@@ -128,11 +132,22 @@ export async function uploadAlbum(
       coverImagePath
     );
 
+    // 2. Upload cover image
+    console.log("📸 Uploading cover image...");
+    const cueSheetPath = `cueSheets/${albumId}_cueSheet.${cueSheetFile.name
+      .split(".")
+      .pop()}`;
+    const cueSheetUrl = await uploadFileToStorage(
+      cueSheetFile,
+      cueSheetPath
+    );
+
     // 2. Create album document first (without trackIds)
     console.log("📝 Creating album document...");
     const albumDocRef = await addDoc(collection(db, "albums"), {
       ...albumData,
       coverImage: coverImageUrl,
+      cueSheet: cueSheetUrl,
       trackIds: [], // Will update after tracks are uploaded
       createdAt: new Date().toISOString(),
     });
