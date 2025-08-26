@@ -35,6 +35,8 @@ const AlbumsList = () => {
     fetchAlbums();
   }, []);
 
+
+
   return (
     <div className="flex flex-col gap-4">
       {albums.map((album) => (
@@ -49,7 +51,9 @@ const AlbumsList = () => {
               width={100}
               height={100}
               className="rounded object-cover"
+              unoptimized
             />
+
           )}
 
           <div className="flex-1">
