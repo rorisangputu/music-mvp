@@ -12,6 +12,7 @@ import {
   query,
   where,
   Timestamp,
+  orderBy,
 } from "firebase/firestore";
 import { useParams } from "next/navigation";
 import { deleteAlbum, DeleteProgress } from "@/lib/music-delete";
@@ -85,6 +86,7 @@ export default function AlbumPageClient({
       // Fetch tracks by albumId
       const q = query(
         collection(db, "tracks"),
+
         where("albumId", "==", albumId)
       );
       const querySnapshot = await getDocs(q);
