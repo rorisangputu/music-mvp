@@ -120,6 +120,7 @@ const NewReleases = (props: Props) => {
                           width={300}
                           height={300}
                           className="rounded-lg object-cover"
+                          unoptimized
                         />
                         <div>
                           <p className="uppercase font-semibold">{album.title}</p>
