@@ -16,6 +16,8 @@ export const CATEGORIES = [
   "Corporate",
   "Electronic",
   "Hip Hop",
+  "House",
+  "Techno",
   "Jazz",
   "Rock",
   "Pop",
