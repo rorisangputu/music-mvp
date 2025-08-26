@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import debounce from 'lodash.debounce';
 
 type Album = {
@@ -12,6 +12,7 @@ type Album = {
     category: string;
     coverImage?: string;
     genre?: string;
+    releaseDate?: string;
 };
 
 type FilterParams = {
@@ -65,7 +66,8 @@ export const useAlbums = () => {
         const fetchAlbums = async () => {
             try {
                 setLoading(true);
-                const querySnapshot = await getDocs(collection(db, 'albums'));
+                const q = query(collection(db, 'albums'), orderBy('createdAt', 'desc'));
+                const querySnapshot = await getDocs(q);
                 const data = querySnapshot.docs.map(
                     (doc) => ({ id: doc.id, ...doc.data() }) as Album
                 );
