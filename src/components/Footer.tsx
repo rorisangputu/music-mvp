@@ -27,8 +27,8 @@ const Footer = (props: Props) => {
               </Link>
             </li>
             <li>
-              <Link href="/albums" className="hover:underline">
-                Albums
+              <Link href="/library" className="hover:underline">
+                Library
               </Link>
             </li>
             <li>
