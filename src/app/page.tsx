@@ -8,7 +8,7 @@ import NoSearch from "@/components/home/NoSearch";
 
 export default function Home() {
   return (
-    <div className="w-full mx-auto py-10">
+    <div className="w-full mx-auto">
       <div className="">
         {/* Background Image Layer */}
         <div className="absolute inset-0 -z-10">
