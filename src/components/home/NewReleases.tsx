@@ -114,7 +114,7 @@ const NewReleases = (props: Props) => {
                     key={album.id}
                     className="pl-1 basis-1/2 md:basis-1/3 lg:basis-1/4"
                   >
-                    <Link href={`/albums/${album.id}`}>
+                    <Link href={`/library/${album.id}`}>
                       <div className="space-y-3 cursor-pointer hover:opacity-80 transition-opacity">
                         <Image
                           src={album.coverImage || "/placeholder-album.jpg"}
