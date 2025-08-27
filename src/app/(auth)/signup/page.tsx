@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircleIcon } from "lucide-react";
+import GoogleSignIn from "../_components/google-sign-in";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow space-y-6">
+    <div className="w-full max-w-md mx-auto my-20 p-6 bg-white rounded-2xl shadow space-y-6">
       <h1 className="text-2xl font-bold text-center">Create Your Account</h1>
 
       {error && (
@@ -63,6 +64,20 @@ export default function SignUpPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      <GoogleSignIn />
+
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with email
+          </span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
