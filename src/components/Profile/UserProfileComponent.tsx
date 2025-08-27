@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { useFavourites } from "@/lib/useFavourites";
+
+
 
 type User = {
   id: string;
@@ -17,80 +10,14 @@ type User = {
   email: string;
 };
 
-type Favourite = {
-  id: string;
-  trackId: string;
-  createdAt: string;
-};
-
-type Track = {
-  id: string;
-  title: string;
-  composer: string;
-  duration: string;
-  audioUrl: string;
-  genre: string;
-  category: string;
-};
-
 export default function UserProfileComponent({ user }: { user: User }) {
-  const [favourites, setFavourites] = useState<Favourite[]>([]);
-  const [favouriteTracks, setFavouriteTracks] = useState<Track[]>([]);
-  const [tracksLoading, setTracksLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchFavourites = async () => {
-      try {
-        const response = await fetch("/api/user/favourites");
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log(data);
-          setFavourites(data.favourites); // Typo fix: backend returns `favorites` not `favourites`
-
-          if (data.favourites.length > 0) {
-            await fetchTrackDetails(data.favourites);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching favourites:", error);
-      }
-    };
-
-    const fetchTrackDetails = async (favourites: Favourite[]) => {
-      setTracksLoading(true);
-
-      const fetchedTracks: Track[] = [];
-
-      for (const fav of favourites) {
-        try {
-          const q = query(
-            collection(db, "tracks"),
-            where("id", "==", fav.trackId) // ✅ match by field
-          );
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            querySnapshot.forEach((doc) => {
-              fetchedTracks.push({
-                id: doc.id,
-                ...doc.data(),
-              } as Track);
-            });
-          } else {
-            console.warn("Track not found for admin trackId:", fav.trackId);
-          }
-        } catch (error) {
-          console.error("Error querying track by trackId:", fav.trackId, error);
-        }
-      }
-
-      setFavouriteTracks(fetchedTracks);
-      setTracksLoading(false);
-    };
-
-    fetchFavourites();
-  }, []);
+  const {
+    favourites,
+    favouriteTracks,
+    tracksLoading,
+    error,
+    refetch
+  } = useFavourites();
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
@@ -114,9 +41,23 @@ export default function UserProfileComponent({ user }: { user: User }) {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            My Favourite Tracks ({favourites?.length || 0})
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              My Favourite Tracks ({favourites?.length || 0})
+            </h2>
+            <button
+              onClick={refetch}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded p-4 mb-4">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
 
           {tracksLoading ? (
             <p className="text-gray-600">Loading...</p>
