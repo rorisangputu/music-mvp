@@ -25,7 +25,7 @@ const Hero = (props: Props) => {
           </div>
           <div className="flex gap-3 my-10 ">
             <Link
-              href={"/albums"}
+              href={"/library"}
               className="bg-[#ec7027] text-black font-medium p-3 rounded-md"
             >
               Browse Trends
