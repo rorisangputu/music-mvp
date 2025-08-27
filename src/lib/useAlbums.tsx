@@ -58,7 +58,7 @@ export const useAlbums = () => {
             }
         });
 
-        router.push(`/albums?${params.toString()}`);
+        router.push(`/library?${params.toString()}`);
     }, [searchParams, router]);
 
     // Fetch albums
@@ -128,7 +128,7 @@ export const useAlbums = () => {
     }, [updateURLParams]);
 
     const clearFilters = useCallback(() => {
-        router.push('/albums');
+        router.push('/library');
     }, [router]);
 
     return {

@@ -41,7 +41,7 @@ export default async function Nav() {
                 <Link href="/">Home</Link>
               </li>
               <li>
-                <Link href="/albums">Library</Link>
+                <Link href="/library">Library</Link>
               </li>
               <li>
                 <Link href="/licensing">Licensing</Link>
@@ -51,12 +51,12 @@ export default async function Nav() {
             <div className=" md:flex items-center space-x-2">
               {!user ? (
                 <div className="space-x-5">
-                  <Link href="/signup">
+                  <Link href="/signup" className="cursor-pointer hover:underline">
                     Sign Up
                   </Link>
                   <Link
                     href="/signin"
-                    className="bg-[#ec7027] text-md text-black px-3 py-2 font-semibold"
+                    className="bg-orange-600 hover:bg-orange-500 text-md text-black px-3 py-2 font-semibold"
                   >
                     Sign In
                   </Link>

@@ -31,7 +31,7 @@ const Hero = (props: Props) => {
               Browse Trends
             </Link>
             <Link
-              href={"/albums"}
+              href={"/signup"}
               className="bg-transparent border text-white font-medium p-3 rounded-md"
             >
               Sign Up

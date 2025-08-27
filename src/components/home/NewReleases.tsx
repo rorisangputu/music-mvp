@@ -14,6 +14,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "../ui/carousel";
+import { MoveRight } from "lucide-react";
 
 type Album = {
   id: string;
@@ -77,7 +78,7 @@ const NewReleases = (props: Props) => {
             <div className="flex justify-between">
               <h1 className="text-xl lg:text-2xl font-semibold">Latest Albums</h1>
               <Button className="bg-transparent text-black shadow-none">
-                <Link href={"/albums"} className="uppercase">
+                <Link href={"/library"} className="uppercase">
                   Show all
                 </Link>
               </Button>
@@ -97,10 +98,11 @@ const NewReleases = (props: Props) => {
         <div className="space-y-5">
           <div className="flex justify-between">
             <h1 className="text-xl lg:text-2xl font-semibold">Latest Albums</h1>
-            <Button className="bg-transparent text-black shadow-none">
-              <Link href={"/albums"} className="uppercase">
+            <Button className="flex flex-row space-x-2" >
+              <Link href={"/library"} className="capitalize">
                 Show all
               </Link>
+              <MoveRight />
             </Button>
           </div>
 
