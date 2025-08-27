@@ -237,8 +237,8 @@ const AlbumsPage = () => {
     };
   }, [currentAudio]);
 
-  if (loading) return <div className="flex justify-center py-10">Loading albums...</div>;
-  if (error) return <div className="flex justify-center py-10 text-red-500">{error}</div>;
+  if (loading) return <div className="flex justify-center py-44 bg-white text-blue-600">Loading albums...</div>;
+  if (error) return <div className="flex justify-center py-44 bg-white text-red-500">{error}</div>;
 
   return (
     <div className="w-full bg-gray-50 py-10 min-h-screen">
