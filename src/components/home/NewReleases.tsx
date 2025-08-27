@@ -77,10 +77,11 @@ const NewReleases = (props: Props) => {
           <div className="space-y-5">
             <div className="flex justify-between">
               <h1 className="text-xl lg:text-2xl font-semibold">Latest Albums</h1>
-              <Button className="bg-transparent text-black shadow-none">
-                <Link href={"/library"} className="uppercase">
+              <Button className="flex flex-row space-x-2" >
+                <Link href={"/library"} className="capitalize">
                   Show all
                 </Link>
+                <MoveRight />
               </Button>
             </div>
             <div className="text-center py-8">
