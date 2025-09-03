@@ -145,7 +145,7 @@ const AlbumsList = () => {
 
               <div className="mt-4 flex gap-2">
                 <Link
-                  href={`/albums/${album.id}`}
+                  href={`/library/${album.id}`}
                   className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                 >
                   View
