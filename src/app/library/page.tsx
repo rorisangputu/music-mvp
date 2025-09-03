@@ -245,9 +245,9 @@ const AlbumsPage = () => {
       <div className="w-[90%] lg:w-[80%] mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Album Library</h1>
-          <p className="text-sm text-gray-600">
+          {/* <p className="text-sm text-gray-600">
             {totalItems} album{totalItems !== 1 ? 's' : ''} found
-          </p>
+          </p> */}
         </div>
 
         {/* Search + Filters */}
