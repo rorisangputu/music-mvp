@@ -29,7 +29,7 @@ export default async function Nav() {
         <div>
           <Image
             src={logo}
-            alt="cmmg"
+            alt="cmmg-logo"
             width={120}
             height={120}
           />
