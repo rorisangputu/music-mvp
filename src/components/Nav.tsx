@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
+import logo from '../../public/cmmg-logo.png'
 
 type NavUser = {
   name: String;
@@ -27,7 +28,7 @@ export default async function Nav() {
       <div className="flex items-center justify-between">
         <div>
           <Image
-            src="https://cmmg.co.za/wp-content/uploads/2025/03/music-content-1-300x169.png"
+            src={logo}
             alt="cmmg"
             width={120}
             height={120}
