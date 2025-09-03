@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import GoogleSignIn from "../_components/google-sign-in";
 
 export default function Signin() {
   const [formData, setFormData] = useState({
@@ -59,8 +60,22 @@ export default function Signin() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 space-y-5">
         <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
+
+        <GoogleSignIn />
+
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with email
+            </span>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -93,11 +108,10 @@ export default function Signin() {
 
           {message.text && (
             <div
-              className={`mb-4 p-3 rounded ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
+              className={`mb-4 p-3 rounded ${message.type === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+                }`}
             >
               {message.text}
             </div>

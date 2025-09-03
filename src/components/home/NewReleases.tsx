@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { cache, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -36,7 +36,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLatestAlbums = async () => {
+    const fetchLatestAlbums = cache(async () => {
       try {
         // Create a query to get the latest albums (ordered by creation date, limited to 6)
         const albumsQuery = query(
@@ -47,8 +47,17 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
 
         const querySnapshot = await getDocs(albumsQuery);
         const data = querySnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() }) as Album
+          (doc) =>
+            ({
+              id: doc.id,
+              category: doc.data().category, // Access category from doc.data()
+              coverImage: doc.data().coverImage, // Access category from doc.data()
+              genre: doc.data().genre, // Access category from doc.data()
+              title: doc.data().title, // Access category from doc.data()
+              artist: doc.data().artist, // Access category from doc.data()
+            }) as Album
         );
+        console.log(data)
 
         setAlbums(data);
       } catch (error) {
@@ -67,7 +76,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
       } finally {
         setLoading(false);
       }
-    };
+    });
 
     fetchLatestAlbums();
   }, []);
@@ -177,7 +186,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
                               width={300}
                               height={300}
                               className="aspect-square object-cover transition-transform duration-500 group-hover:scale-110"
-                              unoptimized
+
                             />
 
                             {/* Overlay */}

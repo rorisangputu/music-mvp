@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           email: user.email,
           role: user.role,
         },
-        redirectTo: "/admin/dasuserhboard",
+        redirectTo: "/admin/dashboard",
       },
       { status: 200 }
     );
