@@ -102,7 +102,7 @@ export async function createUser(data: {
       email: data.email,
       password: hashedPassword,
       role: data.role || "USER",
-      isVerified: true,
+      isVerified: false,
       verificationCode,
       verificationCodeExpires,
     },
@@ -126,7 +126,7 @@ export async function createUser(data: {
   // Console log for testing/backup
   console.log("🔐 USER VERIFICATION CODE:");
   console.log(`📧 Email: ${data.email}`);
-  //console.log(`🔢 Code: ${verificationCode}`);
+  console.log(`🔢 Code: ${verificationCode}`);
   console.log(`⏰ Expires: ${verificationCodeExpires}`);
   //console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
   console.log("=".repeat(50));

@@ -111,7 +111,7 @@ const AlbumsList = () => {
       {/* Albums Count & Page Info */}
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-gray-600">
-          Showing {startIndex + 1}-{Math.min(endIndex, albums.length)} of {albums.length} albums
+          {/* Showing {startIndex + 1}-{Math.min(endIndex, albums.length)} of {albums.length} albums */}
         </div>
         <div className="text-sm text-gray-600">
           Page {currentPage} of {totalPages}
@@ -187,8 +187,8 @@ const AlbumsList = () => {
                     <button
                       onClick={() => handlePageChange(page as number)}
                       className={`px-3 py-2 text-sm font-medium border-t border-b border-gray-300 ${currentPage === page
-                          ? 'bg-blue-50 text-blue-600 border-blue-500 z-10'
-                          : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-500'
+                        ? 'bg-blue-50 text-blue-600 border-blue-500 z-10'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-500'
                         }`}
                     >
                       {page}
