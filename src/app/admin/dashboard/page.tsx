@@ -123,9 +123,9 @@ export default async function AdminDashboard() {
           </div>
 
           {/* Library Overview Stats */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <LibraryOverview />
-          </div>
+          </div> */}
 
           {/* Albums List Section */}
           <div className="mb-8">
