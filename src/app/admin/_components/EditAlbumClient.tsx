@@ -1,132 +1,57 @@
-// app/admin/edit-album/[albumId]/EditAlbumClient.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { CATEGORIES, GENRES } from "@/lib/music-upload";
 
-interface AlbumData {
-  title: string;
-  artist: string;
-  category: string;
-  genre: string;
-  description: string;
-  releaseDate: string;
-}
+import { CATEGORIES, GENRES } from "@/lib/music-upload";
+import { useAlbumEdit } from "@/lib/hooks/adminPanel/useAlbumEdit";
+import TrackEdit from "./TrackEdit";
 
 export default function EditAlbumClient() {
   const { albumId } = useParams();
   const router = useRouter();
-
-  const [albumData, setAlbumData] = useState<AlbumData>({
-    title: "",
-    artist: "",
-    category: "",
-    genre: "",
-    description: "",
-    releaseDate: "",
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-  const [originalData, setOriginalData] = useState<AlbumData | null>(null);
 
-  useEffect(() => {
-    const fetchAlbum = async () => {
-      if (!albumId) return;
-
-      try {
-        const albumDoc = await getDoc(doc(db, "albums", albumId as string));
-
-        if (albumDoc.exists()) {
-          const data = albumDoc.data();
-          const albumInfo: AlbumData = {
-            title: data.title || "",
-            artist: data.artist || "",
-            category: data.category || "",
-            genre: data.genre || "",
-            description: data.description || "",
-            releaseDate: data.releaseDate || "",
-          };
-
-          setAlbumData(albumInfo);
-          setOriginalData(albumInfo);
-        } else {
-          setMessage({
-            type: "error",
-            text: "Album not found",
-          });
-        }
-      } catch (error) {
-        setMessage({
-          type: "error",
-          text: `Error loading album: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        });
-      }
-
-      setLoading(false);
-    };
-
-    fetchAlbum();
-  }, [albumId]);
+  const {
+    albumData,
+    setAlbumData,
+    tracks, updateTrack,
+    loading,
+    saving,
+    error,
+    hasChanges,
+    updateAlbum,
+    resetToOriginal,
+  } = useAlbumEdit(albumId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!albumId) return;
-
-    setSaving(true);
     setMessage({ type: "", text: "" });
 
-    try {
-      await updateDoc(doc(db, "albums", albumId as string), {
-        title: albumData.title,
-        artist: albumData.artist,
-        category: albumData.category,
-        genre: albumData.genre,
-        description: albumData.description,
-        releaseDate: albumData.releaseDate,
-        updatedAt: new Date().toISOString(),
-      });
+    const result = await updateAlbum(albumData);
 
+    if (result.success) {
       setMessage({
         type: "success",
         text: "Album updated successfully!",
       });
 
-      // Update original data to reflect changes
-      setOriginalData({ ...albumData });
-
       // Redirect after a short delay
       setTimeout(() => {
-        router.push(`/albums/${albumId}`);
+        router.push(`/library/${albumId}`);
       }, 1500);
-    } catch (error) {
+    } else {
       setMessage({
         type: "error",
-        text: `Update failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        text: result.error || "Update failed",
       });
     }
-
-    setSaving(false);
   };
 
   const handleCancel = () => {
-    if (originalData) {
-      setAlbumData({ ...originalData });
-    }
+    resetToOriginal();
     router.back();
   };
-
-  const hasChanges =
-    originalData && JSON.stringify(albumData) !== JSON.stringify(originalData);
 
   if (loading) {
     return (
@@ -138,6 +63,22 @@ export default function EditAlbumClient() {
             <div className="h-4 bg-gray-200 rounded"></div>
             <div className="h-4 bg-gray-200 rounded"></div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !albumData.title) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <div className="text-center py-8">
+          <div className="text-red-500 text-lg">{error}</div>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
@@ -247,13 +188,18 @@ export default function EditAlbumClient() {
           />
         </div>
 
+        <h2 className="mt-4 font-semibold text-lg">Tracks</h2>
+        {tracks.map(track => (
+          <TrackEdit key={track.id} track={track} onSave={updateTrack} />
+        ))}
+
+
         {message.text && (
           <div
-            className={`p-4 rounded-md ${
-              message.type === "success"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+            className={`p-4 rounded-md ${message.type === "success"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+              }`}
           >
             {message.text}
           </div>

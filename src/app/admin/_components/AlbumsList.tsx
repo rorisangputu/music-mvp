@@ -1,51 +1,18 @@
 "use client";
-import React from "react";
-import { useState, useEffect, useMemo } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import React, { useMemo, useState } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useAlbums } from "@/lib/hooks/adminPanel/useAlbums";
 
-type Album = {
-  id: string;
-  title: string;
-  releaseDate: string;
-  coverImage?: string;
-  genre?: string;
-};
+
 
 const ITEMS_PER_PAGE = 6;
 
 const AlbumsList = () => {
-  const [albums, setAlbums] = useState<Album[]>([]);
+
+  const { albums, loading, error } = useAlbums();
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAlbums = async () => {
-      try {
-        setLoading(true);
-        const querySnapshot = await getDocs(collection(db, "albums"));
-        const albums = querySnapshot.docs.map((doc) => {
-          const { title, coverImage, releaseDate, genre } = doc.data();
-          return {
-            id: doc.id,
-            title,
-            coverImage,
-            releaseDate,
-            genre,
-          };
-        });
-        setAlbums(albums);
-      } catch (error) {
-        console.error("Error fetching albums:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAlbums();
-  }, []);
 
   // Pagination logic
   const totalPages = Math.ceil(albums.length / ITEMS_PER_PAGE);
@@ -58,12 +25,11 @@ const AlbumsList = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getVisiblePageNumbers = () => {
-    const delta = 2; // Number of pages to show on each side of current page
+    const delta = 2;
     const range = [];
     const rangeWithDots = [];
 

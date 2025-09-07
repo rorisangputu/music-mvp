@@ -11,6 +11,7 @@ export interface AlbumMetadata {
 }
 
 export interface TrackMetadata {
+  id: string;
   title: string;
   albumId?: string;
   audioUrl: string;
@@ -21,9 +22,11 @@ export interface TrackMetadata {
   cueSheet?: string;
   downloadable: boolean;
   duration?: number;
-  genre: string;
-  mood: string;
-  tags: string[];
+  genre?: string;
+  mood?: string;
+  tags?: string[];
+  trackNumber?: number;
+  catalogNumber?: string;
 }
 
 export interface UploadProgress {
