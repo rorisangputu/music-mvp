@@ -20,6 +20,8 @@ type Track = {
   mood: string[];
   tags: string[];
   bpm: number;
+  isrc: string;
+  trackNumber: number;
   downloadable: boolean;
   createdAt: string;
   albumId: string;
@@ -78,6 +80,7 @@ const AlbumsPage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+
   const formatDuration = (timestamp: Timestamp): string => {
     const seconds = timestamp.seconds;
     if (seconds < 0 || seconds > 3600) return "0:00";
@@ -89,6 +92,11 @@ const AlbumsPage = () => {
   const formatDate = (timestamp: Timestamp): string => {
     return timestamp.toDate().toISOString().split("T")[0];
   };
+
+  const formatDateString = (timestamp: string): string => {
+    return new Date(timestamp).toISOString().split("T")[0];
+  };
+
 
   // Fetch album details and tracks
   const fetchAlbumDetails = async (albumId: string) => {
@@ -552,21 +560,14 @@ const AlbumsPage = () => {
             </audio>
 
             <div className="text-sm text-gray-700 space-y-1 mb-4">
+              <p><strong>Track Number:</strong> {selectedTrack.trackNumber}</p>
               <p><strong>Category:</strong> {selectedTrack.category}</p>
               <p><strong>Genre:</strong> {selectedTrack.genre}</p>
-              <p><strong>Date Added:</strong> {selectedTrack.createdAt}</p>
-              {selectedTrack.mood && selectedTrack.mood.length > 0 && (
-                <div>
-                  <strong>Moods:</strong>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedTrack.mood.map((mood, index) => (
-                      <span key={index} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                        {mood}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p><strong>Mood:</strong> {selectedTrack.mood}</p>
+              <p><strong>Date Added:</strong> {formatDateString(selectedTrack.createdAt)}</p>
+              <p><strong>ISRC No:</strong> {selectedTrack.isrc}</p>
+
+
             </div>
 
             {/* Actions */}
