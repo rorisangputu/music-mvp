@@ -7,6 +7,7 @@ import { CATEGORIES, GENRES } from "@/types/music";
 import { X, Play, Pause, Download, Heart, FileText, Clock } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc, Timestamp } from "firebase/firestore";
+import AlbumCard from "./_components/AlbumCard";
 
 type Track = {
   id: string;
@@ -317,31 +318,7 @@ const AlbumsPage = () => {
         {albums.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
             {albums.map((album) => (
-              <div
-                key={album.id}
-                onClick={() => handleAlbumClick(album)}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
-              >
-                <div className="aspect-square relative">
-                  <Image
-                    src={album.coverImage || "/placeholder-album.jpg"}
-                    alt={album.title}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold mb-1 truncate">{album.title}</h2>
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-2">{album.description}</p>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="bg-gray-100 px-2 py-1 rounded">{album.category}</span>
-                    {album.genre && (
-                      <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded">{album.genre}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <AlbumCard key={album.id} album={album} onClick={handleAlbumClick}/>
             ))}
           </div>
         ) : (

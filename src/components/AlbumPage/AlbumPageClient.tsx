@@ -16,6 +16,10 @@ import {
 } from "firebase/firestore";
 import { useParams } from "next/navigation";
 import { deleteAlbum, DeleteProgress } from "@/lib/music-delete";
+import { ArrowLeft } from "lucide-react";
+import AudioPlayer from "@/app/library/_components/AudioPlayer";
+import TrackCard from "@/app/library/_components/TrackCard";
+import TrackModal from "@/app/library/_components/TrackModal";
 
 type Track = {
   id: string;
@@ -29,8 +33,11 @@ type Track = {
   mood: string[];
   tags: string[];
   bpm: number;
+  isrc: string;
+  trackNumber: number;
   downloadable: boolean;
   createdAt: string;
+  albumId: string;
 };
 
 type Album = {
@@ -86,7 +93,6 @@ export default function AlbumPageClient({
       // Fetch tracks by albumId
       const q = query(
         collection(db, "tracks"),
-
         where("albumId", "==", albumId)
       );
       const querySnapshot = await getDocs(q);
@@ -105,11 +111,9 @@ export default function AlbumPageClient({
               : convertSecondsToMinutes(docData.duration),
         } as Track;
       });
-      // Extract leading number from title (if present), otherwise fallback to Infinity
 
       const sorted = data.sort((a, b) => a.title.localeCompare(b.title));
       setTracks(sorted);
-
     };
 
     if (albumId) {
@@ -132,22 +136,19 @@ export default function AlbumPageClient({
         text: "Album deleted successfully! Redirecting...",
       });
 
-      // Redirect after a short delay
       setTimeout(() => {
-        router.push("/albums"); // Adjust to your albums list page
+        router.push("/albums");
       }, 2000);
     } catch (error) {
       setDeleteMessage({
         type: "error",
-        text: `Delete failed: ${error instanceof Error ? error.message : "Unknown error"
-          }`,
+        text: `Delete failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
     }
 
     setIsDeleting(false);
   };
 
-  // User action handlers
   const handleAddToFavorites = async (track: Track) => {
     try {
       const response = await fetch("/api/user/favourites", {
@@ -173,7 +174,6 @@ export default function AlbumPageClient({
   };
 
   const handleDownload = (track: Track) => {
-    // Create a download link for the audio file
     const link = document.createElement("a");
     link.href = track.audioUrl;
     link.download = `${track.title} - ${track.composer}.mp3`;
@@ -182,34 +182,44 @@ export default function AlbumPageClient({
     document.body.removeChild(link);
   };
 
-  const handleDownloadCueSheet = (track: Track) => {
-    if (track.cueSheetUrl) {
+  const handleDownloadCueSheet = (album: Album) => {
+    if (album.cueSheet) {
       const link = document.createElement("a");
-      link.href = track.cueSheetUrl;
-      link.download = `${track.title} - cue sheet.cue`;
+      link.href = album.cueSheet;
+      link.download = `${album.title} - cue sheet.cue`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
   };
-  console.log(album);
+
   return (
-    <div className="w-full bg-gray-50 py-10">
-      <div className="w-[90%] lg:w-[80%] mx-auto">
-        <div className="flex justify-between items-center mb-5">
-          <h1 className="text-xl font-semibold">Album</h1>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex flex-row gap-5 items-center"
+            >
+              <ArrowLeft/> Back
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Album Details</h1>
+          </div>
+          
           {isAdmin && album && (
             <div className="flex gap-3">
               <button
                 onClick={() => router.push(`/admin/albums/${albumId}/edit`)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-medium"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
               >
                 Edit Album
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 {isDeleting ? "Deleting..." : "Delete Album"}
               </button>
@@ -217,249 +227,183 @@ export default function AlbumPageClient({
           )}
         </div>
 
+        {/* Album Info */}
         {album && (
-          <div className="flex flex-col md:flex-row gap-6 mb-10 items-start">
-            {album.coverImage && (
-              <img
-                src={album.coverImage}
-                alt={album.title}
-                className="w-full md:w-60 rounded shadow object-cover"
-              />
-            )}
-            <div className="flex flex-col space-y-5">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{album.title}</h1>
-                <p className="text-gray-700 text-sm mb-1">
-                  <strong>Category:</strong> {album.category}
-                </p>
-                {album.genre && (
-                  <p className="text-gray-700 text-sm mb-1">
-                    <strong>Genre:</strong> {album.genre}
-                  </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              {album.coverImage && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={album.coverImage}
+                    alt={album.title}
+                    className="w-full lg:w-64 h-64 object-cover rounded-lg shadow-md"
+                  />
+                </div>
+              )}
+              
+              <div className="flex-1 space-y-6">
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">{album.title}</h1>
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                      {album.category}
+                    </span>
+                    {album.genre && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                        {album.genre}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-600 text-lg leading-relaxed">{album.description}</p>
+                </div>
+                
+                {isUser && (
+                  <div>
+                    <button
+                    onClick={() => handleDownloadCueSheet(album)}
+                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-neutral-50 bg-orange-600 w-fit hover:bg-orange-500 transition-colors"
+                  >
+                    📋 Download Cue Sheet
+                  </button>
+                  </div>
                 )}
-                <p className="text-gray-600 mt-2">{album.description}</p>
               </div>
-              {isUser ?? <div>
-                <a href={album.cueSheet} className="bg-orange-600 py-2 px-3 text-white">Cue Sheet</a>
-              </div>}
             </div>
           </div>
         )}
 
         {/* Delete Progress */}
         {deleteProgress.length > 0 && (
-          <div className="bg-white p-4 rounded-md shadow mb-6">
-            <h3 className="font-medium mb-2">Deletion Progress</h3>
-            {deleteProgress.map((progress, index) => (
-              <div key={index} className="mb-2">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>{progress.fileName}</span>
-                  <span
-                    className={`font-medium ${progress.status === "completed"
-                      ? "text-green-600"
-                      : progress.status === "error"
-                        ? "text-red-600"
-                        : "text-blue-600"
-                      }`}
-                  >
-                    {progress.status === "completed"
-                      ? "✅"
-                      : progress.status === "error"
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Deletion Progress</h3>
+            <div className="space-y-3">
+              {deleteProgress.map((progress, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">{progress.fileName}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">
+                      {progress.status === "completed"
+                        ? "✅"
+                        : progress.status === "error"
                         ? "❌"
                         : progress.status === "deleting"
-                          ? "🗑️"
-                          : "⏳"}
-                    {progress.status}
-                  </span>
+                        ? "🗑️"
+                        : "⏳"}
+                    </span>
+                    <span
+                      className={`text-sm font-medium capitalize ${
+                        progress.status === "completed"
+                          ? "text-green-600"
+                          : progress.status === "error"
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    >
+                      {progress.status}
+                    </span>
+                  </div>
+                  {progress.error && (
+                    <p className="text-red-600 text-xs mt-1">{progress.error}</p>
+                  )}
                 </div>
-                {progress.error && (
-                  <p className="text-red-600 text-xs">{progress.error}</p>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
         {/* Delete Message */}
         {deleteMessage.text && (
           <div
-            className={`p-4 rounded-md mb-6 ${deleteMessage.type === "success"
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-              }`}
+            className={`rounded-xl p-4 mb-8 ${
+              deleteMessage.type === "success"
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : "bg-red-50 border border-red-200 text-red-800"
+            }`}
           >
             {deleteMessage.text}
           </div>
         )}
 
+        {/* Tracks Section */}
         <div className="space-y-6">
-          {tracks.map((track) => (
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Tracks</h2>
+            <span className="text-sm text-gray-500">{tracks.length} track{tracks.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          <div className="grid gap-4">
+            {tracks.map((track, index) => (
+              <TrackCard track={track} index={index} onClick={setSelectedTrack}/>
+            ))}
+           
+          </div>
+        </div>
+
+        {/* Track Details Modal */}
+        {selectedTrack && (
+          <TrackModal track={selectedTrack} isUser={isUser} 
+            onClick={setSelectedTrack} onFavClick={handleAddToFavorites} 
+            onDownloadClick={handleDownload}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
             <div
-              key={track.id}
-              className="border p-4 rounded shadow hover:shadow-md transition space-y-3"
+              className="bg-white max-w-md w-full rounded-xl shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-lg font-semibold">{track.title}</h2>
-              <p className="text-sm text-gray-600">
-                By {track.composer} — {track.duration}
-              </p>
-              <audio controls controlsList="nodownload" className="mt-2 w-full">
-                <source src={track.audioUrl} type="audio/mpeg" />
-              </audio>
-              <button
-                className="py-2 px-3 bg-orange-600 text-white hover:bg-orange-700 cursor-pointer"
-                onClick={() => setSelectedTrack(track)}
-              >
-                Options
-              </button>
-            </div>
-          ))}
-
-          {/* Track Details Modal */}
-          {selectedTrack && (
-            <div
-              className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-              onClick={() => setSelectedTrack(null)}
-            >
-              <div
-                className="bg-white max-w-md w-full p-6 rounded-lg relative shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setSelectedTrack(null)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-black"
-                >
-                  ✕
-                </button>
-
-                <h2 className="text-xl font-bold mb-2">
-                  {selectedTrack.title}
-                </h2>
-                <p className="text-sm text-gray-600 mb-1">
-                  By {selectedTrack.composer}
-                </p>
-                <p className="text-sm text-gray-500 mb-3">
-                  Duration: {selectedTrack.duration}
-                </p>
-
-                <audio
-                  controls
-                  controlsList="nodownload"
-                  className="w-full mb-4"
-                >
-                  <source src={selectedTrack.audioUrl} type="audio/mpeg" />
-                </audio>
-
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>
-                    <strong>Category:</strong> {selectedTrack.category}
-                  </li>
-                  <li>
-                    <strong>Genre:</strong> {selectedTrack.genre}
-                  </li>
-                  <li>
-                    <strong>Date Added:</strong> {selectedTrack.createdAt}
-                  </li>
-                </ul>
-
-                {/* User Actions - Only show if user is signed in */}
-                {isUser && (
-                  <div className="mt-4 space-y-2">
-                    <div className="border-t pt-3">
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">
-                        Actions
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => handleAddToFavorites(selectedTrack)}
-                          className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium"
-                        >
-                          Add to Favorites
-                        </button>
-
-                        {selectedTrack.downloadable && (
-                          <button
-                            onClick={() => handleDownload(selectedTrack)}
-                            className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium"
-                          >
-                            Download Track
-                          </button>
-                        )}
-
-                        {selectedTrack.cueSheetUrl && (
-                          <button
-                            onClick={() =>
-                              handleDownloadCueSheet(selectedTrack)
-                            }
-                            className="w-full py-2 px-3 bg-black text-white rounded transition-colors text-sm font-medium"
-                          >
-                            📋 Download Cue Sheet
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="mt-4 flex justify-between items-center">
-                  {selectedTrack.cueSheetUrl && (
-                    <a
-                      href={selectedTrack.cueSheetUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 underline"
-                    >
-                      View Cue Sheet
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Confirmation Modal */}
-          {showDeleteConfirm && (
-            <div
-              className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              <div
-                className="bg-white max-w-md w-full p-6 rounded-lg relative shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h2 className="text-xl font-bold mb-4 text-red-600">
-                  Delete Album
-                </h2>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">Delete Album</h2>
                 <p className="text-gray-700 mb-4">
-                  Are you sure you want to delete "{album?.title}"? This action
-                  will:
+                  Are you sure you want to delete "{album?.title}"? This action will:
                 </p>
-                <ul className="text-sm text-gray-600 mb-6 space-y-1">
-                  <li>• Delete all {tracks.length} tracks</li>
-                  <li>• Remove all audio files from storage</li>
-                  <li>• Delete the album cover image</li>
-                  <li>• Remove all database records</li>
+                <ul className="text-sm text-gray-600 mb-6 space-y-2 bg-gray-50 p-4 rounded-lg">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                    Delete all {tracks.length} tracks
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                    Remove all audio files from storage
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                    Delete the album cover image
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                    Remove all database records
+                  </li>
                 </ul>
-                <p className="text-red-600 font-medium mb-6">
-                  This action cannot be undone!
-                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
+                  <p className="text-red-700 text-sm font-medium">
+                    ⚠️ This action cannot be undone!
+                  </p>
+                </div>
 
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDeleteAlbum}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors"
                   >
                     Delete Album
                   </button>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
