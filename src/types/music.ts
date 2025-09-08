@@ -11,7 +11,6 @@ export interface AlbumMetadata {
 }
 
 export interface TrackMetadata {
-  id: string;
   title: string;
   albumId?: string;
   audioUrl: string;

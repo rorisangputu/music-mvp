@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { TrackMetadata } from "@/types/music";
+
 
 export interface AlbumData {
     title: string;
@@ -13,9 +13,27 @@ export interface AlbumData {
     description: string;
     releaseDate: string;
 }
+export interface TrackData {
+    id: string
+    title: string;
+    albumId?: string;
+    audioUrl: string;
+    bpm?: number;
+    category: string;
+    composer: string; // same as artist
+    createdAt: string;
+    cueSheet?: string;
+    downloadable: boolean;
+    duration?: number;
+    genre?: string;
+    mood?: string;
+    tags?: string[];
+    trackNumber?: number;
+    catalogNumber?: string;
+}
 
 export const useAlbumEdit = (albumId: string | string[] | undefined) => {
-    const [tracks, setTracks] = useState<TrackMetadata[]>([]);
+    const [tracks, setTracks] = useState<TrackData[]>([]);
     const [albumData, setAlbumData] = useState<AlbumData>({
         title: "",
         artist: "",
@@ -69,9 +87,9 @@ export const useAlbumEdit = (albumId: string | string[] | undefined) => {
                     where("albumId", "==", albumId)
                 );
                 const querySnapshot = await getDocs(tracksQuery);
-                const tracksData: TrackMetadata[] = [];
+                const tracksData: TrackData[] = [];
                 querySnapshot.forEach(doc => {
-                    tracksData.push({ ...doc.data(), id: doc.id } as TrackMetadata & { id: string });
+                    tracksData.push({ ...doc.data(), id: doc.id } as TrackData & { id: string });
                 });
                 setTracks(tracksData);
             } catch (err) {
@@ -105,7 +123,7 @@ export const useAlbumEdit = (albumId: string | string[] | undefined) => {
         }
     };
 
-    const updateTrack = async (trackId: string, data: Partial<TrackMetadata>) => {
+    const updateTrack = async (trackId: string, data: Partial<TrackData>) => {
         try {
             await updateDoc(doc(db, "tracks", trackId), data);
             setTracks(prev => prev.map(t => t.id === trackId ? { ...t, ...data } : t));
