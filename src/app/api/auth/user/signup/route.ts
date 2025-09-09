@@ -1,12 +1,27 @@
 import { NextResponse } from "next/server";
 import { signUpSchema } from "@/lib/validationSchemas";
 import { createUser, getUserByEmail } from "@/lib/user";
+import { ZodError } from "zod";
+
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     //console.log(body);
-    const { name, email, password } = signUpSchema.parse(body);
+    const result = signUpSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          errors: result.error.issues.map((e) => ({
+            field: e.path[0],
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+    const { name, email, password } = result.data;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -34,8 +49,10 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
+    
+    
     return NextResponse.json(
       { message: "Internal server error." },
       { status: 500 }

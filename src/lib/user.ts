@@ -1,9 +1,11 @@
 import db from "@/db/db";
 import bcrypt from "bcryptjs";
-import { Resend } from "resend";
+import { createTransport } from "nodemailer";
+//import { Resend } from "resend";
+
 
 // Initialize Resend with your API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+//const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function getUserByEmail(email: string) {
   return await db.user.findUnique({
@@ -16,6 +18,15 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const transport = createTransport({
+  host: process.env.MAILTRAP_HOST,
+  port: Number(process.env.MAILTRAP_PORT),
+  auth: {
+    user: process.env.MAILTRAP_USER,
+    pass: process.env.MAILTRAP_PASS
+  }
+});
+
 // Send verification email
 async function sendVerificationEmail(
   email: string,
@@ -23,8 +34,8 @@ async function sendVerificationEmail(
   name: string
 ) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!, // e.g., 'noreply@yourdomain.com'
+    const mail = await transport.sendMail({
+      from: process.env.MAILTRAP_FROM!, // e.g., 'noreply@yourdomain.com'
       to: [email],
       subject: "Verify Your Account",
       html: `
@@ -72,13 +83,13 @@ async function sendVerificationEmail(
       `,
     });
 
-    if (error) {
-      console.error("❌ Email sending failed:", error);
-      return { success: false, error: error.message };
+    if (mail.rejected && mail.rejected.length > 0) {
+      console.error("❌ Email sending failed:", mail.messageId);
+      return { success: false, error: "Email did not send."};
     }
 
-    console.log("✅ Verification email sent successfully:", data?.id);
-    return { success: true, emailId: data?.id };
+    console.log("✅ Verification email sent successfully:", mail.messageId);
+    return { success: true, emailId: mail.messageId };
   } catch (error) {
     console.error("❌ Email sending error:", error);
     return { success: false, error: "Failed to send verification email" };
@@ -128,7 +139,7 @@ export async function createUser(data: {
   console.log(`📧 Email: ${data.email}`);
   console.log(`🔢 Code: ${verificationCode}`);
   console.log(`⏰ Expires: ${verificationCodeExpires}`);
-  //console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
+  console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
   console.log("=".repeat(50));
 
   return user;
@@ -169,6 +180,8 @@ export async function verifyUser(email: string, code: string) {
     where: { email },
     data: {
       isVerified: true,
+      emailVerified: true,
+      emailVerifiedDate: new Date(),
       verificationCode: null,
       verificationCodeExpires: null,
     },
@@ -207,26 +220,26 @@ export async function resendVerificationCode(email: string) {
   });
 
   // Send new verification email
-  // const emailResult = await sendVerificationEmail(
-  //   email,
-  //   verificationCode,
-  //   user.name
-  // );
+  const emailResult = await sendVerificationEmail(
+    email,
+    verificationCode,
+    user.name
+  );
 
-  // if (!emailResult.success) {
-  //   console.error(
-  //     "⚠️ Code generated but email failed to send:",
-  //     emailResult.error
-  //   );
-  //   // Still return success since the code was updated in DB
-  // }
+  if (!emailResult.success) {
+    console.error(
+      "⚠️ Code generated but email failed to send:",
+      emailResult.error
+    );
+    // Still return success since the code was updated in DB
+  }
 
   // Console log for testing
   console.log("🔄 RESEND VERIFICATION CODE:");
   console.log(`📧 Email: ${email}`);
   console.log(`🔢 New Code: ${verificationCode}`);
   console.log(`⏰ Expires: ${verificationCodeExpires}`);
-  //console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
+  console.log(`📬 Email sent: ${emailResult.success ? "✅" : "❌"}`);
   console.log("=".repeat(50));
 
   return { success: true, verificationCode };

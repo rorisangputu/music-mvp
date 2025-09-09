@@ -7,9 +7,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircleIcon } from "lucide-react";
 import GoogleSignIn from "../_components/google-sign-in";
 
+type ErrorType = string | { field: string; message: string }[] | null;
+
 export default function SignUpPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorType>();
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -20,8 +22,8 @@ export default function SignUpPage() {
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
-      phone: formData.get("phone"),
-      address: formData.get("address"),
+      // phone: formData.get("phone"),
+      // address: formData.get("address"),
       password: formData.get("password"),
       confirmPassword: formData.get("confirmPassword"),
     };
@@ -45,10 +47,15 @@ export default function SignUpPage() {
           );
         } else {
           const errorData = await res.json();
-          setError(errorData.message || "Something went wrong");
+          if (errorData.errors) {
+            setError(errorData.errors);
+          } else {
+            setError(errorData.message || "Something went wrong");
+          }
+
         }
       } catch {
-        setError("Failed to sign up. Please try again.");
+        setError("Error while trying to sign in.");
       }
     });
   };
@@ -61,7 +68,16 @@ export default function SignUpPage() {
         <Alert variant="destructive">
           <XCircleIcon className="h-5 w-5" />
           <AlertTitle>Sign Up Failed</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {Array.isArray(error) ?
+              error.map((e, idx) => (
+                <div key={idx} className="text-red-500 text-sm">
+                  {e.message}
+                </div>
+              )) : <p>{error.toString()}</p>
+            }
+            
+          </AlertDescription>
         </Alert>
       )}
 
@@ -87,6 +103,15 @@ export default function SignUpPage() {
           required
           className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
         />
+        {Array.isArray(error) &&
+          error
+            .filter((e) => e.field === "name")
+            .map((e, idx) => (
+              <div key={idx} className="text-red-500 text-sm">
+                {e.message}
+              </div>
+            ))
+          }
         <input
           name="email"
           type="email"
@@ -94,6 +119,15 @@ export default function SignUpPage() {
           required
           className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
         />
+        {Array.isArray(error) &&
+          error
+            .filter((e) => e.field === "email")
+            .map((e, idx) => (
+              <div key={idx} className="text-red-500 text-sm">
+                {e.message}
+              </div>
+            ))
+          }
         <input
           name="password"
           type="password"
@@ -101,6 +135,16 @@ export default function SignUpPage() {
           required
           className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
         />
+        {Array.isArray(error) &&
+          error
+            .filter((e) => e.field === "password")
+            .map((e, idx) => (
+              <div key={idx} className="text-red-500 text-sm">
+                {e.message}
+              </div>
+            ))
+          }
+
         <input
           name="confirmPassword"
           type="password"
@@ -108,6 +152,15 @@ export default function SignUpPage() {
           required
           className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
         />
+        {Array.isArray(error) &&
+          error
+            .filter((e) => e.field === "confirmPassword")
+            .map((e, idx) => (
+              <div key={idx} className="text-red-500 text-sm">
+                <ul><li>{e.message}</li></ul>
+              </div>
+            ))
+          }
 
         <button
           type="submit"

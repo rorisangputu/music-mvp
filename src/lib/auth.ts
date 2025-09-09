@@ -73,57 +73,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Handle OAuth sign in
-      if (account?.provider === "google") {
-        const existingUser = await db.user.findUnique({
-          where: { email: user.email! },
-        });
+    // async signIn({ user, account, profile }) {
+    //   // Handle OAuth sign in
+    //   if (account?.provider === "google") {
+    //     const existingUser = await db.user.findUnique({
+    //       where: { email: user.email! },
+    //     });
 
-        if (existingUser) {
-          // Update existing user to ensure they're active and verified
-          await db.user.update({
-            where: { email: user.email! },
-            data: {
-              isActive: true,
-              isVerified: true, // OAuth users are considered verified
-              name: user.name || existingUser.name,
-              image: user.image,
-              // Don't set role if it already exists
-              ...(existingUser.role ? {} : { role: "USER" }),
-            },
-          });
-        } else {
-          // This case should be handled by the adapter, but just in case
-          await db.user.create({
-            data: {
-              email: user.email!,
-              name: user.name || "Google User",
-              image: user.image,
-              isActive: true,
-              isVerified: true,
-              role: "USER", // Set default role
-            },
-          });
-        }
-      }
-      return true;
-    },
+    //     if (existingUser) {
+    //       // Update existing user to ensure they're active and verified
+    //       await db.user.update({
+    //         where: { email: user.email! },
+    //         data: {
+    //           isActive: true,
+    //           isVerified: true, // OAuth users are considered verified
+    //           name: user.name || existingUser.name,
+    //           image: user.image,
+    //           // Don't set role if it already exists
+    //           ...(existingUser.role ? {} : { role: "USER" }),
+    //         },
+    //       });
+    //     } else {
+    //       // This case should be handled by the adapter, but just in case
+    //       await db.user.create({
+    //         data: {
+    //           email: user.email!,
+    //           name: user.name || "Google User",
+    //           image: user.image,
+    //           isActive: true,
+    //           isVerified: true,
+    //           role: "USER", // Set default role
+    //         },
+    //       });
+    //     }
+    //   }
+    //   return true;
+    // },
     async jwt({ token, user, account }) {
       if (user) {
         token.role = (user as any).role;
         token.type = (user as any).type || "user";
       }
       // If this is a Google sign in, get the user's role from the database
-      if (account?.provider === "google") {
-        const dbUser = await db.user.findUnique({
-          where: { email: token.email! },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.type = "user";
-        }
-      }
+      // if (account?.provider === "google") {
+      //   const dbUser = await db.user.findUnique({
+      //     where: { email: token.email! },
+      //   });
+      //   if (dbUser) {
+      //     token.role = dbUser.role;
+      //     token.type = "user";
+      //   }
+      // }
       return token;
     },
     async session({ session, token }) {
@@ -135,21 +135,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-  events: {
-    async createUser({ user }) {
-      // Ensure newly created OAuth users have proper defaults
-      if (user.email) {
-        await db.user.update({
-          where: { id: user.id },
-          data: {
-            isActive: true,
-            isVerified: true,
-            role: "USER",
-          },
-        });
-      }
-    },
-  },
+  // events: {
+  //   async createUser({ user }) {
+  //     // Ensure newly created OAuth users have proper defaults
+  //     if (user.email) {
+  //       await db.user.update({
+  //         where: { id: user.id },
+  //         data: {
+  //           isActive: true,
+  //           isVerified: true,
+  //           role: "USER",
+  //         },
+  //       });
+  //     }
+  //   },
+  // },
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
