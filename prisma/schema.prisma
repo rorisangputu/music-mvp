@@ -88,6 +88,13 @@ model Favourite {
   @@unique([userId, trackId])
 }
 
+model Track {
+  id         String @id
+  title      String
+  audio_url  String
+  play_count Int
+}
+
 model VerificationToken {
   identifier String   @unique
   token      String   @unique

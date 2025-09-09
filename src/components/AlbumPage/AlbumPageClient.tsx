@@ -333,7 +333,7 @@ export default function AlbumPageClient({
 
           <div className="grid gap-4">
             {tracks.map((track, index) => (
-              <TrackCard track={track} index={index} onClick={setSelectedTrack}/>
+              <TrackCard key={track.id} track={track} index={index} onClick={setSelectedTrack}/>
             ))}
            
           </div>
