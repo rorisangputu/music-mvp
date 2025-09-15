@@ -58,7 +58,8 @@ model User {
 
   accounts   Account[]
   sessions   Session[]
-  favourites Favourite[] // Add this line
+  favourites Favourite[]
+  downloads  Download[]
 }
 
 model Admin {
@@ -89,10 +90,27 @@ model Favourite {
 }
 
 model Track {
-  id         String @id
-  title      String
-  audio_url  String
-  play_count Int
+  id            String @id
+  title         String
+  audio_url     String
+  play_count    Int
+  downloadCount Int    @default(0)
+
+  downloads Download[]
+}
+
+model Download {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  // 👇 Keep this if you want only 1 download per user per track
+  @@unique([userId, trackId])
 }
 
 model VerificationToken {
