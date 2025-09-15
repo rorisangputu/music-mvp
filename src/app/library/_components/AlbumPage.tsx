@@ -7,6 +7,7 @@ import { X, Play, Pause, Download, Heart, FileText, Clock } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, doc, getDoc, Timestamp } from "firebase/firestore";
 import AlbumCard from "./AlbumCard";
+import { success } from "zod";
 
 
 type Track = {
@@ -68,6 +69,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const[downloaded, setDownloaded] = useState<boolean>(false);
 
   // Helper functions
   const convertSecondsToMinutes = (seconds: number): string => {
@@ -163,6 +165,36 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     }
   };
 
+  const incrementDownloadCount = async(trackId: string, title: string, url:string) => {
+    try {
+      await fetch("/api/tracks/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trackId, title, url}),
+      });
+    } catch (error) {
+        console.error("Failed to track increment Download Count")
+    }
+  }
+  const trackDownload = async (trackId:string) => {
+    try {
+      const response = await fetch("/api/tracking/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trackId})
+      });
+
+      if(!response.ok){
+        const errorData = await response.json();
+        return {success: false, message: errorData.message || "Failed to track downlaod", code: 400}
+      }
+
+      return {success: true, message: "Successful tracking", code: 200}
+    } catch (error) {
+      return {success: false, message: "Server Error", code: 500}
+    }
+  }
+
   // Audio playback
   const togglePlayPause = (track: Track) => {
     if (playingTrackId === track.id) {
@@ -223,16 +255,27 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     }
   };
 
-  const handleDownload = (track: Track) => {
-    if (track.downloadable) {
-      const link = document.createElement("a");
-      link.href = track.audioUrl;
-      link.download = `${track.title} - ${track.composer}.mp3`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      alert("This track is not available for download.");
+  const handleDownload = async (track: Track) => {
+    if (!track.downloadable) {
+      alert("This track is not available for download")
+    }
+
+    const link = document.createElement("a");
+    link.href = track.audioUrl;
+    link.download = `${track.title} - ${track.composer}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+
+    const tracking = await trackDownload(track.id);
+    if(tracking.success){
+      await incrementDownloadCount(track.id, track.title, track.audioUrl);
+      setDownloaded(true)
+      alert("Track downloade!");
+    }else {
+      const error = await tracking;
+      alert(error.message || "Failed to download");
     }
   };
 
