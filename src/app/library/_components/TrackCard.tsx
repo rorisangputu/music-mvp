@@ -1,10 +1,13 @@
 import React from "react";
 import AudioPlayer from "./AudioPlayer";
+import { Pause, Play } from "lucide-react";
 
 type TrackCardProps = {
 track: Track;
 index: number;
 onClick: (track : Track) => void;
+onPlayClick: (track: Track) => void;
+playingTrackId: string | null;
 };
 
 type Track = {
@@ -26,10 +29,9 @@ type Track = {
   albumId: string;
 };
 
-const TrackCard = ({track, index, onClick}: TrackCardProps) => {
+const TrackCard = ({track, index, onClick, onPlayClick, playingTrackId}: TrackCardProps) => {
   return (
     <div
-      key={track.id}
       className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between mb-4">
@@ -57,13 +59,24 @@ const TrackCard = ({track, index, onClick}: TrackCardProps) => {
         </div>
       </div>
 
-      <AudioPlayer src={track.audioUrl} className="w-full h-10 rounded-lg" />
+      <div className="flex flex-row justify-start items-center space-x-5">
+        <button
+        onClick={() => onPlayClick(track)}
+        className="px-2 py-2 bg-white text-orange-600 rounded hover:bg-orange-700 transition-colors"
+      >
+        {playingTrackId === track.id ? (
+          <Pause className="w-5 h-5" />
+        ) : (
+          <Play className="w-5 h-5" />
+        )}
+      </button>
       <button
-        className="inline-flex items-center mt-5 px-4 py-2 border flex-wrap w-fit border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-sm"
+        className="inline-flex items-center px-4 py-2 border flex-wrap w-fit border-transparent text-sm font-medium rounded text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-sm"
         onClick={() => onClick(track)}
       >
         View Options
       </button>
+      </div>
     </div>
   );
 };

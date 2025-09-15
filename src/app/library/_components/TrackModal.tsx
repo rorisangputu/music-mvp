@@ -70,7 +70,6 @@ const TrackModal = ({
         </div>
 
         <div className="p-6 space-y-6">
-          <AudioPlayer src={track.audioUrl} className="w-full" />
 
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
             <p>

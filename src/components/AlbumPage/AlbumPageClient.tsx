@@ -73,13 +73,15 @@ export default function AlbumPageClient({
   const [tracks, setTracks] = useState<Track[]>([]);
   const [album, setAlbum] = useState<Album | null>(null);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
-
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  
   // Delete states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState<DeleteProgress[]>([]);
   const [deleteMessage, setDeleteMessage] = useState({ type: "", text: "" });
-
+  const[downloaded, setDownloaded] = useState<boolean>(false);
   useEffect(() => {
     const fetchAlbumAndTracks = async () => {
       const albumDoc = await getDoc(doc(db, "albums", albumId as string));
@@ -173,14 +175,69 @@ export default function AlbumPageClient({
     }
   };
 
-  const handleDownload = (track: Track) => {
-    const link = document.createElement("a");
-    link.href = track.audioUrl;
-    link.download = `${track.title} - ${track.composer}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+   const incrementPlayCount = async (trackId: string, title: string, url: string) => {
+    try {
+      const res = await fetch("/api/tracks/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId, title, url }),
+      });
+
+      if(!res.ok){
+        const errorData = await res.json();
+        return {success: false, message: errorData.message, code: 400}
+      }
+      return {success: true, message: "Play count incremented", code: 200}
+    } catch (error) {
+      return {success: false, message: "Server Error", code: 500}
+    }
   };
+
+  const incrementDownloadCount = async(trackId: string, title: string, url:string) => {
+    try {
+      const response = await fetch("/api/tracks/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({trackId, title, url}),
+      });
+
+      if(!response.ok){
+        const errorData = await response.json();
+        return{success: false, message: errorData.message || "Error incrementing", code: 400}
+      }
+
+      return {success: true, message: "Download Count incremented", code: 200}
+    } catch (error) {
+      return {success: false, message: "Server Error", code: 500}
+    }
+  }
+
+  const handleDownload = async (track: Track) => {
+      if (!track.downloadable) {
+        alert("This track is not available for download")
+      }
+  
+      const link = document.createElement("a");
+      link.href = track.audioUrl;
+      link.download = `${track.title} - ${track.composer}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    
+      const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
+  
+      if(increment.success) {
+  
+        setDownloaded(true)
+        alert("Track downloade!");
+  
+      }else {
+        const error = await increment;
+        alert(error.message || "Failed to download");
+      }
+  
+      
+    };
 
   const handleDownloadCueSheet = (album: Album) => {
     if (album.cueSheet) {
@@ -190,6 +247,41 @@ export default function AlbumPageClient({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+  };
+
+   // Audio playback
+  const togglePlayPause = (track: Track) => {
+    if (playingTrackId === track.id) {
+      if (currentAudio) {
+        currentAudio.pause();
+        setCurrentAudio(null);
+      }
+      setPlayingTrackId(null);
+    } else {
+      if (currentAudio) {
+        currentAudio.pause();
+        setCurrentAudio(null);
+      }
+
+      const audio = new Audio(track.audioUrl);
+      setCurrentAudio(audio);
+      setPlayingTrackId(track.id);
+
+      audio.play().then(() => {
+        // ✅ only increment once playback actually starts
+        incrementPlayCount(track.id, track.title, track.audioUrl);
+      })
+      .catch(error => {
+        console.error('Error playing audio:', error);
+        setPlayingTrackId(null);
+        setCurrentAudio(null);
+      });
+
+      audio.onended = () => {
+        setPlayingTrackId(null);
+        setCurrentAudio(null);
+      };
     }
   };
 
@@ -333,7 +425,7 @@ export default function AlbumPageClient({
 
           <div className="grid gap-4">
             {tracks.map((track, index) => (
-              <TrackCard key={track.id} track={track} index={index} onClick={setSelectedTrack}/>
+              <TrackCard key={track.id} track={track} index={index} onClick={setSelectedTrack} onPlayClick={togglePlayPause} playingTrackId={playingTrackId}/>
             ))}
            
           </div>

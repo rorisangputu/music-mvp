@@ -181,7 +181,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
       if(!response.ok){
         const errorData = await response.json();
-        return{success: false, message: errorData.mesaage, code: 400}
+        return{success: false, message: errorData.message || "Error incrementing", code: 400}
       }
 
       return {success: true, message: "Download Count incremented", code: 200}
@@ -189,25 +189,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
       return {success: false, message: "Server Error", code: 500}
     }
   }
-  
-  const trackDownload = async (trackId:string) => {
-    try {
-      const response = await fetch("/api/tracking/download", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({trackId})
-      });
 
-      if(!response.ok){
-        const errorData = await response.json();
-        return {success: false, message: errorData.message || "Failed to track downlaod", code: 400}
-      }
-
-      return {success: true, message: "Successful tracking", code: 200}
-    } catch (error) {
-      return {success: false, message: "Server Error", code: 500}
-    }
-  }
 
   // Audio playback
   const togglePlayPause = (track: Track) => {
@@ -280,27 +262,20 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  
+    const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
 
+    if(increment.success) {
 
-    const tracking = await trackDownload(track.id);
-    if(tracking.success){
-      
-      const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
-
-      if(increment.success) {
-
-        setDownloaded(true)
-        alert("Track downloade!");
-
-      }else {
-        const error = await tracking;
-        alert(error.message || "Failed to download");
-      }
+      setDownloaded(true)
+      alert("Track downloade!");
 
     }else {
-      const error = await tracking;
+      const error = await increment;
       alert(error.message || "Failed to download");
     }
+
+    
   };
 
   const handleDownloadCueSheet = (track: Track) => {
