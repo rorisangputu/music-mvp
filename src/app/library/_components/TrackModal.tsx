@@ -1,5 +1,4 @@
 import React from "react";
-import AudioPlayer from "./AudioPlayer";
 import { Download, Heart } from "lucide-react";
 
 type Track = {

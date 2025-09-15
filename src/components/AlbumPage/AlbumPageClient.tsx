@@ -17,7 +17,6 @@ import {
 import { useParams } from "next/navigation";
 import { deleteAlbum, DeleteProgress } from "@/lib/music-delete";
 import { ArrowLeft } from "lucide-react";
-import AudioPlayer from "@/app/library/_components/AudioPlayer";
 import TrackCard from "@/app/library/_components/TrackCard";
 import TrackModal from "@/app/library/_components/TrackModal";
 
