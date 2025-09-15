@@ -155,27 +155,41 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
   const incrementPlayCount = async (trackId: string, title: string, url: string) => {
     try {
-      await fetch("/api/tracks/play", {
+      const res = await fetch("/api/tracks/play", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trackId, title, url }),
       });
+
+      if(!res.ok){
+        const errorData = await res.json();
+        return {success: false, message: errorData.message, code: 400}
+      }
+      return {success: true, message: "Play count incremented", code: 200}
     } catch (error) {
-      console.error("Failed to increment play:", error);
+      return {success: false, message: "Server Error", code: 500}
     }
   };
 
   const incrementDownloadCount = async(trackId: string, title: string, url:string) => {
     try {
-      await fetch("/api/tracks/download", {
+      const response = await fetch("/api/tracks/download", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({trackId, title, url}),
       });
+
+      if(!response.ok){
+        const errorData = await response.json();
+        return{success: false, message: errorData.mesaage, code: 400}
+      }
+
+      return {success: true, message: "Download Count incremented", code: 200}
     } catch (error) {
-        console.error("Failed to track increment Download Count")
+      return {success: false, message: "Server Error", code: 500}
     }
   }
+  
   const trackDownload = async (trackId:string) => {
     try {
       const response = await fetch("/api/tracking/download", {
@@ -270,9 +284,19 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
     const tracking = await trackDownload(track.id);
     if(tracking.success){
-      await incrementDownloadCount(track.id, track.title, track.audioUrl);
-      setDownloaded(true)
-      alert("Track downloade!");
+      
+      const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
+
+      if(increment.success) {
+
+        setDownloaded(true)
+        alert("Track downloade!");
+
+      }else {
+        const error = await tracking;
+        alert(error.message || "Failed to download");
+      }
+
     }else {
       const error = await tracking;
       alert(error.message || "Failed to download");
