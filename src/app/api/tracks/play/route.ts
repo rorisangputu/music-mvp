@@ -13,10 +13,11 @@ export async function POST(req: Request) {
     if(!track){
         await db.track.create({
             data: {
-                id: trackId,
-                title: title,
-                audio_url: url,
-                play_count: 1
+              id: trackId,
+              title: title,
+              audio_url: url,
+              play_count: 1,
+              downloadCount: 0,
             }
         })
     }else{
