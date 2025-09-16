@@ -35,6 +35,13 @@ export default async function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          <div>
+            <h1 className="font-bold text-3xl py-5">Admin Dashboard</h1>
+          </div>
+          {/* Library Overview Stats */}
+          <div className="mb-8">
+            <LibraryOverview />
+          </div>
           {/* Quick Actions Section */}
           <div className="mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -59,7 +66,7 @@ export default async function AdminDashboard() {
               />
 
               <QuickActionCards
-                link="/admin/library"
+                link="/admin/dashboard/manage-library"
                 title="Manage Library"
                 description="View and edit existing albums & tracks"
                 theme="purple"
@@ -68,7 +75,7 @@ export default async function AdminDashboard() {
 
               {/* Additional cards you might want */}
               <QuickActionCards
-                link="/admin/settings"
+                link="/admin/dashboard/settings"
                 title="Settings"
                 description="Configure application settings"
                 theme="indigo"
@@ -76,7 +83,7 @@ export default async function AdminDashboard() {
               />
 
               <QuickActionCards
-                link="/admin/analytics"
+                link="/admin/dashboard/analytics"
                 title="Analytics"
                 description="View usage statistics and reports"
                 theme="yellow"
@@ -84,7 +91,7 @@ export default async function AdminDashboard() {
               />
 
               <QuickActionCards
-                link="/admin/users"
+                link="/admin/dashboard/users"
                 title="User Management"
                 description="Manage user accounts and permissions"
                 theme="red"
@@ -93,29 +100,8 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          {/* Library Overview Stats */}
-          <div className="mb-8">
-            <BulkIsrcUpdater />
-          </div>
-          <div className="mb-8">
-            <LibraryOverview />
-          </div>
 
-          {/* Albums List Section */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">
-                Recent Albums
-              </h2>
-              <Link
-                href="/admin/library"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                View All →
-              </Link>
-            </div>
-            <AlbumsList />
-          </div>
+          
         </div>
       </main>
     </div>

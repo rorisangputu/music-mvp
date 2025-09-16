@@ -1,9 +1,8 @@
-// app/_components/Nav.tsx
 import { auth, signOut } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
-import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
+import MobileMenu from "../components/Nav/MobileMenu";
 import logo from '../../public/cmmg-logo.png'
 
 type NavUser = {
@@ -79,14 +78,18 @@ export default async function Nav() {
                     </Button>
                   </form>
                 </div>
-
-              )}
+               )}
             </div>
           </div>
 
-          <div className="flex md:hidden">
-            <Menu size={33} />
-          </div>
+          {/* Replace the existing mobile menu button with the MobileMenu component */}
+          <MobileMenu 
+            user={user} 
+            onSignOut={async () => {
+              "use server";
+              await signOut({ redirectTo: "/" });
+            }} 
+          />
         </div>
       </div>
     </div>
