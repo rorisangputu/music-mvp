@@ -10,47 +10,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { AlbumMetadata, TrackMetadata, UploadProgress } from "@/types/music";
 
-// Predefined categories and genres for production music
-export const CATEGORIES = [
-  "Cinematic",
-  "Corporate",
-  "Electronic",
-  "Hip Hop",
-  "House",
-  "Techno",
-  "Jazz",
-  "Rock",
-  "Pop",
-  "Ambient",
-  "Classical",
-  "World Music",
-];
 
-export const GENRES = [
-  "Orchestral",
-  "Piano",
-  "Guitar",
-  "Synthesizer",
-  "Drums",
-  "Vocals",
-  "Instrumental",
-  "Upbeat",
-  "Mellow",
-  "Dramatic",
-];
-
-export const MOODS = [
-  "Happy",
-  "Sad",
-  "Energetic",
-  "Calm",
-  "Dramatic",
-  "Romantic",
-  "Suspenseful",
-  "Uplifting",
-  "Dark",
-  "Peaceful",
-];
 
 // Extract basic metadata from audio file
 export async function extractAudioMetadata(
