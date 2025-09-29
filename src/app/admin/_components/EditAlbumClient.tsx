@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { CATEGORIES, GENRES } from "@/lib/music-upload";
+
 import { useAlbumEdit } from "@/lib/hooks/adminPanel/useAlbumEdit";
 import TrackEdit from "./TrackEdit";
+import { CATEGORIES, GENRES } from "@/types/music";
 
 export default function EditAlbumClient() {
   const { albumId } = useParams();

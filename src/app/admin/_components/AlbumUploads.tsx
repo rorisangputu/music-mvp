@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { uploadAlbum, CATEGORIES, GENRES, MOODS } from "@/lib/music-upload";
-import { AlbumMetadata, UploadProgress } from "@/types/music";
+import { uploadAlbum } from "@/lib/music-upload";
+import { AlbumMetadata, CATEGORIES, GENRES, UploadProgress } from "@/types/music";
 import Link from "next/link";
+
+
 
 export default function AlbumUpload() {
   const [albumData, setAlbumData] = useState<
@@ -308,7 +310,7 @@ export default function AlbumUpload() {
             {message.type === "success" && albumId && (
               <div className="mt-2">
                 <Link
-                  href={`/albums/${albumId}`}
+                  href={`/library/${albumId}`}
                   className="underline text-blue-600"
                 >
                   View Album
