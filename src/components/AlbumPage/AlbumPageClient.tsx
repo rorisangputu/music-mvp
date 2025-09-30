@@ -138,7 +138,7 @@ export default function AlbumPageClient({
       });
 
       setTimeout(() => {
-        router.push("/albums");
+        router.push("/library");
       }, 2000);
     } catch (error) {
       setDeleteMessage({

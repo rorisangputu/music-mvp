@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { uploadAlbum } from "@/lib/music-upload";
 import { AlbumMetadata, CATEGORIES, GENRES, UploadProgress } from "@/types/music";
 import Link from "next/link";
+import { uploadAlbum } from "@/lib/music-upload";
 
 
 

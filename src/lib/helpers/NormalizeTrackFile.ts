@@ -1,16 +1,17 @@
+//NormalizeTrackFile.ts
 import { Buffer } from "buffer";
 
 //TrackFile represents a file coming from frontend
 export interface TrackFile{
     originalName: string;     // original file name from user
-    data: Buffer;       // file data
+    data: Uint8Array;       // file data
     mimeType: string;   // e.g., 'audio/wav'
 }
 
 // NormalizedTrack contains cleaned filename + file buffer
 export interface NormalizedTrack {
   normalizedName: string;
-  data: Buffer;
+  data: Uint8Array;
   mimeType: string;
 }
 
@@ -37,3 +38,8 @@ export function normalizedTrackFile(file: TrackFile): NormalizedTrack{
     }
 }
 
+// Helper function to convert File to Uint8Array
+export async function fileToUint8Array(file: File): Promise<Uint8Array> {
+  const arrayBuffer = await file.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
+}

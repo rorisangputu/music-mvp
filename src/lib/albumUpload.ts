@@ -1,3 +1,4 @@
+//albumUpload.ts
 import { cleanTrackTitle, extractAudioMetadata } from '@/lib/music-upload';
 import { storage, db } from "./firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -5,7 +6,7 @@ import { collection, addDoc, updateDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { AlbumMetadata, TrackMetadata, UploadProgress } from "@/types/music";
 
-import { NormalizedTrack, normalizedTrackFile } from "./helpers/NormalizeTrackFile";
+import { fileToUint8Array, NormalizedTrack, normalizedTrackFile } from "./helpers/NormalizeTrackFile";
 import { trimAndConvertToFlac, ProcessedTrack } from "./helpers/FileConversion";
 
 
@@ -85,67 +86,75 @@ export async function uploadAlbum(
 
         console.log("Processing tracks");
 
-        // 4. Process all tracks in parallel
-        const trackPromises = trackFiles.map(async (file, index) => {
-            const trackId = uuidv4();
-            trackIds.push(trackId);
+        // 4. Process tracks SEQUENTIALLY (not in parallel)
+        for (let index = 0; index < trackFiles.length; index++) {
+        const file = trackFiles[index];
+        const trackId = uuidv4();
+        trackIds.push(trackId);
 
-            progressArray[index].status = "uploading";
+        progressArray[index].status = "uploading";
+        onProgress?.(progressArray);
+
+        try {
+            console.log(`🎵 Processing track ${index + 1}/${trackFiles.length}: ${file.name}`);
+
+            // 4a. Convert File to Uint8Array
+            const fileData = await fileToUint8Array(file);
+
+            // 4b. Normalize
+            const normalised: NormalizedTrack = normalizedTrackFile({
+            originalName: file.name,
+            data: fileData,
+            mimeType: file.type,
+            });
+
+            // 4c. Trim + convert to FLAC
+            console.log(`⚙️  Converting ${file.name} to FLAC...`);
+            const processed: ProcessedTrack = await trimAndConvertToFlac(normalised);
+            console.log(`✅ Conversion complete for ${file.name}`);
+
+            // 4d. Upload FLAC
+            console.log(`☁️  Uploading ${file.name}...`);
+            const audioUrl = await uploadProcessedTrack(processed, albumId, (p) => {
+            progressArray[index].progress = p;
+            onProgress?.(progressArray);
+            });
+
+            // 4e. Extract audio metadata (duration in seconds)
+            const audioMetdata = await extractAudioMetadata(file);
+
+            // 4f. Create track document
+            const trackData: TrackMetadata = {
+            title: cleanTrackTitle(file.name),
+            albumId: albumDocRef.id,
+            audioUrl,
+            category: albumData.category,
+            composer: albumData.artist,
+            genre: albumData.genre,
+            createdAt: new Date().toISOString(),
+            downloadable: true,
+            duration: audioMetdata.duration,
+            mood: "",
+            tags: [],
+            };
+
+            await addDoc(collection(db, "tracks"), { ...trackData, id: trackId });
+
+            progressArray[index].status = "completed";
+            progressArray[index].progress = 100;
             onProgress?.(progressArray);
 
-            try{
-                // 4a .Normalize
-                const normalised: NormalizedTrack = normalizedTrackFile({
-                    originalName: file.name,
-                    data: file as any,
-                    mimeType: file.type,
-                });
+            console.log(`✅ Track ${index + 1}/${trackFiles.length} uploaded: ${file.name}`);
+        } catch (err) {
+            console.error(`❌ Failed to process ${file.name}:`, err);
+            progressArray[index].status = "error";
+            progressArray[index].error =
+            err instanceof Error ? err.message : "Upload failed";
+            onProgress?.(progressArray);
+            throw err;
+        }
+        }
 
-                // 4b. Trim + convert to FLAC
-                const processed: ProcessedTrack = await trimAndConvertToFlac(normalised);
-
-                // 4c. Upload FLAC
-                const audioUrl = await uploadProcessedTrack(processed, albumId, (p) => {
-                    progressArray[index].progress = p;
-                    onProgress?.(progressArray);
-                });
-
-                // 4d. Extract audio metadata (duration in secomds)
-                const audioMetdata = await extractAudioMetadata(file);
-
-                // 4e. Create track document
-                const trackData: TrackMetadata = {
-                    title: cleanTrackTitle(file.name),
-                    albumId: albumDocRef.id,
-                    audioUrl,
-                    category: albumData.category,
-                    composer: albumData.artist,
-                    genre: albumData.genre,
-                    createdAt: new Date().toISOString(),
-                    downloadable: true,
-                    duration: audioMetdata.duration,
-                    mood: "",
-                    tags:[],
-                };
-                
-                await addDoc(collection(db, "tracks"), { ...trackData, id: trackId });
-
-                progressArray[index].status = "completed";
-                progressArray[index].progress = 100;
-                onProgress?.(progressArray);
-
-                console.log(`✅ Track uploaded: ${file.name}`);
-
-            } catch (err) {
-                progressArray[index].status = "error";
-                progressArray[index].error =
-                err instanceof Error ? err.message : "Upload failed";
-                onProgress?.(progressArray);
-                throw err;
-            }
-        });
-
-        await Promise.all(trackPromises);
 
         // 5️. Update album with track IDs
         await updateDoc(albumDocRef, { trackIds });
@@ -153,7 +162,7 @@ export async function uploadAlbum(
         console.log("🎉 Album upload completed!");
         return { albumId: albumDocRef.id, trackIds };
     }catch (err) {
-        console.error("❌ Album upload failed:", err);
+        console.log("❌ Album upload failed:", err);
         throw err;
     }
 
