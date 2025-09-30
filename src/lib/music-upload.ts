@@ -4,11 +4,9 @@ import {
   collection,
   addDoc,
   updateDoc,
-  doc,
-  writeBatch,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { AlbumMetadata, TrackMetadata, UploadProgress, CATEGORIES, GENRES} from "@/types/music";
+import { AlbumMetadata, TrackMetadata, UploadProgress} from "@/types/music";
 
 
 
