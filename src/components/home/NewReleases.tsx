@@ -184,6 +184,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
                               src={album.coverImage || "/placeholder-album.jpg"}
                               alt={`${album.title} album cover`}
                               width={300}
+                              unoptimized
                               height={300}
                               className="aspect-square object-cover transition-transform duration-500 group-hover:scale-110"
 
