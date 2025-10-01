@@ -3,12 +3,12 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   collection,
   addDoc,
+  setDoc,
+  doc,
   updateDoc,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { AlbumMetadata, TrackMetadata, UploadProgress} from "@/types/music";
-
-
+import { AlbumMetadata, TrackMetadata, UploadProgress } from "@/types/music";
 
 // Extract basic metadata from audio file
 export async function extractAudioMetadata(
@@ -57,16 +57,14 @@ export function uploadFileToStorage(
 // Clean filename for title (remove extension, clean up)
 export function cleanTrackTitle(filename: string): string {
   return filename
-    .replace(/\.[^/.]+$/, "")              // remove extension
-    .replace(/[_-]+/g, " ")                // underscores/hyphens → space
-    .replace(/([a-z])([A-Z])/g, "$1 $2")   // split camelCase or mixed (StopUplifting -> Stop Uplifting)
-    .replace(/\s+/g, " ")                  // collapse multiple spaces
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
     .trim()
-    .replace(/\b\w/g, (l) => l.toUpperCase()) // capitalize each word
-    .replace(/\bCut(\d+)\b/i, "CUT$1");    // restore catalog code to uppercase
+    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace(/\bCut(\d+)\b/i, "CUT$1");
 }
-
-
 
 // Main album upload function
 export async function uploadAlbum(
@@ -106,19 +104,19 @@ export async function uploadAlbum(
       cueSheetPath
     );
 
-    // 2. Create album document first (without trackIds)
+    // 3. Create album document first (without trackIds)
     console.log("📝 Creating album document...");
     const albumDocRef = await addDoc(collection(db, "albums"), {
       ...albumData,
       coverImage: coverImageUrl,
       cueSheet: cueSheetUrl,
-      trackIds: [], // Will update after tracks are uploaded
+      trackIds: [],
       createdAt: new Date().toISOString(),
     });
 
     console.log("🎵 Starting track uploads...");
 
-    // 3. Upload tracks in parallel with progress tracking
+    // 4. Upload tracks in parallel with progress tracking
     const trackUploadPromises = trackFiles.map(async (file, index) => {
       const trackId = uuidv4();
       trackIds.push(trackId);
@@ -129,9 +127,11 @@ export async function uploadAlbum(
         onProgress?.(progressArray);
 
         // Extract audio metadata
+        console.log("extracting metadata")
         const audioMetadata = await extractAudioMetadata(file);
 
         // Upload track file
+        console.log("uploading track file")
         const trackPath = `tracks/${trackId}_${file.name}`;
         const audioUrl = await uploadFileToStorage(
           file,
@@ -141,8 +141,9 @@ export async function uploadAlbum(
             onProgress?.(progressArray);
           }
         );
-
-        // Create track document
+        console.log("creating document")
+        // Create track document using your UUID as Firestore doc ID
+        const trackDocRef = doc(db, "tracks", trackId);
         const trackData: TrackMetadata = {
           title: cleanTrackTitle(file.name),
           albumId: albumDocRef.id,
@@ -153,15 +154,11 @@ export async function uploadAlbum(
           createdAt: new Date().toISOString(),
           downloadable: true,
           duration: audioMetadata.duration,
-          mood: "", // To be set later or via form
+          mood: "",
           tags: [],
-          // bpm: will be extracted later if needed
         };
 
-        await addDoc(collection(db, "tracks"), {
-          ...trackData,
-          id: trackId,
-        });
+        await setDoc(trackDocRef, trackData); // <--- key change here
 
         progressArray[index].status = "completed";
         progressArray[index].progress = 100;
@@ -178,12 +175,12 @@ export async function uploadAlbum(
       }
     });
 
-    // Wait for all tracks to upload
     await Promise.all(trackUploadPromises);
 
-    // 4. Update album with trackIds
+    // 5. Update album with trackIds
+    console.log("updating album with trackIds")
     await updateDoc(albumDocRef, {
-      trackIds: trackIds,
+      trackIds,
     });
 
     console.log("🎉 Album upload completed!");

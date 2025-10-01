@@ -136,7 +136,9 @@ export async function deleteAlbum(
         }
 
         // Delete track document from Firestore
+        console.log(`Attempting to delete track doc: ${track.id}`);
         await deleteDoc(doc(db, "tracks", track.id));
+        console.log(`Deleted track doc: ${track.id}`);
 
         progressArray[progressIndex].status = "completed";
         onProgress?.(progressArray);
@@ -152,7 +154,7 @@ export async function deleteAlbum(
     });
 
     // Wait for all tracks to be deleted
-    await Promise.all(trackDeletionPromises);
+    await Promise.allSettled(trackDeletionPromises);
 
     // 6. Finally, delete the album document
     await deleteDoc(doc(db, "albums", albumId));
