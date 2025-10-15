@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
     await db.loginHistory.create({
       data: {
         userId: user.id,
-        clientType: user.clientType,
         loginMethod: "token",
         ipAddress:
           request.headers.get("x-forwarded-for") ||
@@ -54,6 +53,14 @@ export async function GET(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
+      await db.session.create({
+      data: {
+        userId: user.id,
+        sessionToken: jwt,
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      },
+    });
+    
     // Set JWT cookie with the same name as NextAuth config
     const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set({

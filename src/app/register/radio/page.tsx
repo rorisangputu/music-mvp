@@ -151,7 +151,7 @@ export default function RadioRegistrationPage() {
                     name="category"
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
                     >
-                    <option value="" disabled>
+                    <option value="">
                         Select category
                     </option>
                     <option value="sabc">SABC</option>

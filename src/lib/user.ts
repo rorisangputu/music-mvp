@@ -244,3 +244,124 @@ export async function resendVerificationCode(email: string) {
 
   return { success: true, verificationCode };
 }
+
+// Add this to your email utilities file
+
+// Send permanent sign-in link email for radio stations
+async function sendSignInLinkEmail(
+  email: string,
+  stationName: string,
+  signInUrl: string
+) {
+  try {
+    const mail = await transport.sendMail({
+      from: process.env.MAILTRAP_FROM!, // e.g., 'noreply@yourdomain.com'
+      to: [email],
+      subject: `Welcome ${stationName} - Your Permanent Sign-In Link`,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 40px 20px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🎙️ Welcome to CMMG Music</h1>
+          </div>
+
+          <!-- Main Content -->
+          <div style="background-color: white; padding: 40px 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: #333; margin-bottom: 15px; font-size: 24px;">Hello ${stationName}!</h2>
+            
+            <p style="color: #666; line-height: 1.8; margin-bottom: 25px; font-size: 16px;">
+              Thank you for registering! Your account has been created successfully. 
+              Below is your <strong>permanent sign-in link</strong> that you can use anytime to access the platform.
+            </p>
+
+            <!-- Sign-In Link Button -->
+            <div style="text-align: center; margin: 35px 0;">
+              <a href="${signInUrl}" 
+                 style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); 
+                        color: white; text-decoration: none; padding: 16px 40px; 
+                        border-radius: 8px; font-weight: bold; font-size: 18px; 
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                        transition: transform 0.2s;">
+                🔐 Access Your Account
+              </a>
+            </div>
+
+            <!-- Important Info Box -->
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 6px; margin: 30px 0;">
+              <h3 style="color: #856404; margin: 0 0 10px 0; font-size: 16px;">📌 Important Information</h3>
+              <ul style="color: #856404; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li><strong>Bookmark this link</strong> for easy access in the future</li>
+                <li>This link is <strong>permanent</strong> and won't expire</li>
+                <li>Keep this link <strong>secure</strong> - anyone with it can access your account</li>
+                <li>You can use this link from any device or browser</li>
+              </ul>
+            </div>
+
+            <!-- Direct Link (for copying) -->
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 25px 0;">
+              <p style="color: #666; margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">Your Sign-In Link:</p>
+              <p style="color: #007bff; margin: 0; word-break: break-all; font-family: monospace; font-size: 13px;">
+                ${signInUrl}
+              </p>
+            </div>
+
+            <p style="color: #666; line-height: 1.8; margin-top: 30px; font-size: 15px;">
+              If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+            </p>
+
+            <p style="color: #666; line-height: 1.8; margin-top: 20px; font-size: 15px;">
+              Best regards,<br>
+              <strong>The CMMG Music Team</strong>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 20px; color: #888; font-size: 13px;">
+            <p style="margin: 5px 0;">This is an automated message, please do not reply to this email.</p>
+            <p style="margin: 5px 0;">If you didn't register for this account, please contact our support team immediately.</p>
+          </div>
+        </div>
+      `,
+      text: `
+        🎙️ Welcome to CMMG Music
+
+        Hello ${stationName}!
+
+        Thank you for registering! Your account has been created successfully.
+
+        Your Permanent Sign-In Link:
+        ${signInUrl}
+
+        IMPORTANT INFORMATION:
+        - Bookmark this link for easy access in the future
+        - This link is permanent and won't expire
+        - Keep this link secure - anyone with it can access your account
+        - You can use this link from any device or browser
+
+        If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+
+        Best regards,
+        The CMMG Music Team
+        Cell: 061-548-6843
+
+        ---
+        This is an automated message, please do not reply to this email.
+        If you didn't register for this account, please contact our support team immediately.
+        info@cmmg.co.za
+      `,
+    });
+
+    if (mail.rejected && mail.rejected.length > 0) {
+      console.error("❌ Sign-in link email sending failed:", mail.messageId);
+      return { success: false, error: "Email did not send." };
+    }
+
+    console.log("✅ Sign-in link email sent successfully:", mail.messageId);
+    return { success: true, emailId: mail.messageId };
+  } catch (error) {
+    console.error("❌ Email sending error:", error);
+    return { success: false, error: "Failed to send sign-in link email" };
+  }
+}
+
+export { sendSignInLinkEmail };

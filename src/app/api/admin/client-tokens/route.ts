@@ -15,15 +15,13 @@ export async function GET() {
 
     const clients = await db.user.findMany({
       where: {
-        clientType: {
-          not: null,
-        },
+        isRadioStation: true
       },
       select: {
         id: true,
         name: true,
         email: true,
-        clientType: true,
+        isRadioStation: true,
         signInToken: true,
         isActive: true,
         createdAt: true,
