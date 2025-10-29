@@ -1,5 +1,6 @@
 import Image from "next/image";
 import React from "react";
+import AlbumCover from "./AlbumCover";
 
 type AlbumCardProps = {
   album: Album;
@@ -22,19 +23,20 @@ const AlbumCard = ({album, onClick}: AlbumCardProps) => {
   return (
     <div
       onClick={() => onClick(album)}
-      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
+      className="hover cursor-pointer"
     >
-      <div className="aspect-square relative">
+      <div className="aspect-square relative ">
         <Image
           src={album.coverImage || "/placeholder-album.jpg"}
           alt={album.title}
           fill
-          className="object-cover"
+          className="object-cover rounded-sm"
           unoptimized
         />
+        
       </div>
-      <div className="p-4">
-        <h2 className="text-lg font-semibold mb-1 truncate">{album.title}</h2>
+      <div className="py-2">
+        <h2 className="text-md font-semibold mb-1 truncate">{album.title}</h2>
         <p className="text-sm text-gray-600 line-clamp-2 mb-2">
           {album.description}
         </p>

@@ -102,7 +102,7 @@ export default function LibraryOverview() {
       <h3 className="text-lg font-medium text-gray-900 mb-4">
         Library Overview
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
             {stats.totalAlbums.toLocaleString()}
@@ -132,7 +132,7 @@ export default function LibraryOverview() {
 
       {/* Additional Stats Row */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
           <div className="text-center">
             <div className="font-medium text-gray-900">
               {stats.totalTracks > 0

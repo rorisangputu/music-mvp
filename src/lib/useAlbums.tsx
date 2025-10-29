@@ -22,7 +22,7 @@ type FilterParams = {
     page?: string;
 };
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 10;
 
 export const useAlbums = () => {
     const searchParams = useSearchParams();

@@ -42,7 +42,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
         const albumsQuery = query(
           collection(db, "albums"),
           orderBy("createdAt", "desc"),
-          limit(6)
+          limit(8)
         );
 
         const querySnapshot = await getDocs(albumsQuery);

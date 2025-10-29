@@ -248,7 +248,7 @@ export async function resendVerificationCode(email: string) {
 // Add this to your email utilities file
 
 // Send permanent sign-in link email for radio stations
-async function sendSignInLinkEmail(
+export async function sendSignInLinkEmail(
   email: string,
   stationName: string,
   signInUrl: string
@@ -364,4 +364,3 @@ async function sendSignInLinkEmail(
   }
 }
 
-export { sendSignInLinkEmail };

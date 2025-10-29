@@ -7,7 +7,7 @@ import { useAlbums } from "@/lib/hooks/adminPanel/useAlbums";
 
 
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 20;
 
 const AlbumsList = () => {
 
@@ -77,7 +77,7 @@ const AlbumsList = () => {
       {/* Albums Count & Page Info */}
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-gray-600">
-          {/* Showing {startIndex + 1}-{Math.min(endIndex, albums.length)} of {albums.length} albums */}
+          Showing {startIndex + 1}-{Math.min(endIndex, albums.length)} of {albums.length} albums
         </div>
         <div className="text-sm text-gray-600">
           Page {currentPage} of {totalPages}
@@ -89,30 +89,30 @@ const AlbumsList = () => {
         {paginatedAlbums.map((album) => (
           <div
             key={album.id}
-            className="flex gap-4 border p-4 rounded shadow w-full justify-between items-start hover:shadow-md transition-shadow"
+            className="flex  gap-4 p-4 rounded shadow w-full justify-between items-center hover:shadow-md transition-shadow"
           >
             {album.coverImage && (
               <div className="flex-shrink-0">
                 <Image
                   src={album.coverImage}
                   alt={album.title}
-                  width={100}
-                  height={100}
+                  width={110}
+                  height={110}
                   className="rounded object-cover"
                   unoptimized
                 />
               </div>
             )}
 
-            <div className="flex-1">
-              <h2 className="font-semibold text-lg">{album.title}</h2>
+            <div className="flex-1 md:grid md:grid-cols-4 items-cente space-y-1 gap-5">
+              <h2 className="font-semibold text-md">{album.title}</h2>
               <p className="text-sm text-gray-600">{album.releaseDate}</p>
               {album.genre && <p className="text-sm italic text-gray-500">{album.genre}</p>}
 
-              <div className="mt-4 flex gap-2">
+              <div className="flex gap-2">
                 <Link
                   href={`/library/${album.id}`}
-                  className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  className="px-4 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition"
                 >
                   View
                 </Link>

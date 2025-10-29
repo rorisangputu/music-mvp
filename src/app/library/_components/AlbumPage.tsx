@@ -369,7 +369,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
         {/* Album Grid */}
         {albums.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8">
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 mb-8">
             {albums.map((album) => (
               <AlbumCard key={album.id} album={album} onClick={handleAlbumClick}/>
             ))}
