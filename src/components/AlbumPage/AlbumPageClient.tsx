@@ -1,20 +1,8 @@
 // app/album/[albumId]/AlbumPageClient.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-  orderBy,
-} from "firebase/firestore";
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { deleteAlbum, DeleteProgress } from "@/lib/music-delete";
 import { ArrowLeft } from "lucide-react";
 import TrackCard from "@/app/library/_components/TrackCard";
@@ -49,28 +37,22 @@ type Album = {
   cueSheet: string;
 };
 
-const convertSecondsToMinutes = (seconds: number): string => {
-  if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0)
-    return "0:00";
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
-
 interface AlbumPageClientProps {
+  album: Album;
+  initialTracks: Track[];
   isAdmin: boolean | null;
   isUser: boolean | null;
 }
 
 export default function AlbumPageClient({
+  album,
+  initialTracks,
   isAdmin,
   isUser,
 }: AlbumPageClientProps) {
   const { albumId } = useParams();
   const router = useRouter();
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [album, setAlbum] = useState<Album | null>(null);
+  const [tracks] = useState<Track[]>(initialTracks);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
@@ -80,47 +62,7 @@ export default function AlbumPageClient({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState<DeleteProgress[]>([]);
   const [deleteMessage, setDeleteMessage] = useState({ type: "", text: "" });
-  const[downloaded, setDownloaded] = useState<boolean>(false);
-  useEffect(() => {
-    const fetchAlbumAndTracks = async () => {
-      const albumDoc = await getDoc(doc(db, "albums", albumId as string));
-      if (albumDoc.exists()) {
-        setAlbum({
-          id: albumDoc.id,
-          ...albumDoc.data(),
-        } as Album);
-      }
-
-      // Fetch tracks by albumId
-      const q = query(
-        collection(db, "tracks"),
-        where("albumId", "==", albumId)
-      );
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map((doc) => {
-        const docData = doc.data();
-        return {
-          id: doc.id,
-          ...docData,
-          createdAt:
-            docData.createdAt instanceof Timestamp
-              ? formatDate(docData.createdAt)
-              : docData.createdAt,
-          duration:
-            docData.duration instanceof Timestamp
-              ? formatDuration(docData.duration)
-              : convertSecondsToMinutes(docData.duration),
-        } as Track;
-      });
-
-      const sorted = data.sort((a, b) => a.title.localeCompare(b.title));
-      setTracks(sorted);
-    };
-
-    if (albumId) {
-      fetchAlbumAndTracks();
-    }
-  }, [albumId]);
+  const [downloaded, setDownloaded] = useState<boolean>(false);
 
   const handleDeleteAlbum = async () => {
     if (!album || !albumId) return;
@@ -174,7 +116,7 @@ export default function AlbumPageClient({
     }
   };
 
-   const incrementPlayCount = async (trackId: string, title: string, url: string) => {
+  const incrementPlayCount = async (trackId: string, title: string, url: string) => {
     try {
       const res = await fetch("/api/tracks/play", {
         method: "POST",
@@ -182,61 +124,57 @@ export default function AlbumPageClient({
         body: JSON.stringify({ trackId, title, url }),
       });
 
-      if(!res.ok){
+      if (!res.ok) {
         const errorData = await res.json();
-        return {success: false, message: errorData.message, code: 400}
+        return { success: false, message: errorData.message, code: 400 };
       }
-      return {success: true, message: "Play count incremented", code: 200}
+      return { success: true, message: "Play count incremented", code: 200 };
     } catch (error) {
-      return {success: false, message: "Server Error", code: 500}
+      return { success: false, message: "Server Error", code: 500 };
     }
   };
 
-  const incrementDownloadCount = async(trackId: string, title: string, url:string) => {
+  const incrementDownloadCount = async (trackId: string, title: string, url: string) => {
     try {
       const response = await fetch("/api/tracks/download", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({trackId, title, url}),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId, title, url }),
       });
 
-      if(!response.ok){
+      if (!response.ok) {
         const errorData = await response.json();
-        return{success: false, message: errorData.message || "Error incrementing", code: 400}
+        return { success: false, message: errorData.message || "Error incrementing", code: 400 };
       }
 
-      return {success: true, message: "Download Count incremented", code: 200}
+      return { success: true, message: "Download Count incremented", code: 200 };
     } catch (error) {
-      return {success: false, message: "Server Error", code: 500}
+      return { success: false, message: "Server Error", code: 500 };
     }
-  }
+  };
 
   const handleDownload = async (track: Track) => {
-      if (!track.downloadable) {
-        alert("This track is not available for download")
-      }
-  
-      const link = document.createElement("a");
-      link.href = track.audioUrl;
-      link.download = `${track.title} - ${track.composer}.mp3`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    
-      const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
-  
-      if(increment.success) {
-  
-        setDownloaded(true)
-        alert("Track downloade!");
-  
-      }else {
-        const error = await increment;
-        alert(error.message || "Failed to download");
-      }
-  
-      
-    };
+    if (!track.downloadable) {
+      alert("This track is not available for download");
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = track.audioUrl;
+    link.download = `${track.title} - ${track.composer}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
+
+    if (increment.success) {
+      setDownloaded(true);
+      alert("Track downloaded!");
+    } else {
+      alert(increment.message || "Failed to download");
+    }
+  };
 
   const handleDownloadCueSheet = (album: Album) => {
     if (album.cueSheet) {
@@ -249,7 +187,6 @@ export default function AlbumPageClient({
     }
   };
 
-   // Audio playback
   const togglePlayPause = (track: Track) => {
     if (playingTrackId === track.id) {
       if (currentAudio) {
@@ -267,15 +204,16 @@ export default function AlbumPageClient({
       setCurrentAudio(audio);
       setPlayingTrackId(track.id);
 
-      audio.play().then(() => {
-        // ✅ only increment once playback actually starts
-        incrementPlayCount(track.id, track.title, track.audioUrl);
-      })
-      .catch(error => {
-        console.error('Error playing audio:', error);
-        setPlayingTrackId(null);
-        setCurrentAudio(null);
-      });
+      audio
+        .play()
+        .then(() => {
+          incrementPlayCount(track.id, track.title, track.audioUrl);
+        })
+        .catch((error) => {
+          console.error("Error playing audio:", error);
+          setPlayingTrackId(null);
+          setCurrentAudio(null);
+        });
 
       audio.onended = () => {
         setPlayingTrackId(null);
@@ -294,11 +232,11 @@ export default function AlbumPageClient({
               onClick={() => router.back()}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex flex-row gap-5 items-center"
             >
-              <ArrowLeft/> Back
+              <ArrowLeft /> Back
             </button>
             <h1 className="text-2xl font-bold text-gray-900">Album Details</h1>
           </div>
-          
+
           {isAdmin && album && (
             <div className="flex gap-3">
               <button
@@ -319,49 +257,47 @@ export default function AlbumPageClient({
         </div>
 
         {/* Album Info */}
-        {album && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {album.coverImage && (
-                <div className="flex-shrink-0">
-                  <img
-                    src={album.coverImage}
-                    alt={album.title}
-                    className="w-full lg:w-64 h-64 object-cover rounded-lg shadow-md"
-                  />
-                </div>
-              )}
-              
-              <div className="flex-1 space-y-6">
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-4">{album.title}</h1>
-                  <div className="flex flex-wrap gap-3 mb-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                      {album.category}
+        <div className="bg-neutral-800 rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {album.coverImage && (
+              <div className="flex-shrink-0">
+                <img
+                  src={album.coverImage}
+                  alt={album.title}
+                  className="w-full lg:w-64 h-64 object-cover rounded-lg shadow-md"
+                />
+              </div>
+            )}
+
+            <div className="flex-1 space-y-6">
+              <div>
+                <h1 className="text-4xl font-bold text-neutral-50 mb-4">{album.title}</h1>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <span className="inline-flex items-center px-3 py-1 rounded-sm text-sm font-medium bg-gray-100 text-gray-800">
+                    {album.category}
+                  </span>
+                  {album.genre && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-sm text-sm font-medium bg-orange-100 text-orange-800">
+                      {album.genre}
                     </span>
-                    {album.genre && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                        {album.genre}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-600 text-lg leading-relaxed">{album.description}</p>
+                  )}
                 </div>
-                
-                {isUser && (
-                  <div>
-                    <button
+                <p className="text-neutral-100 text-lg leading-relaxed">{album.description}</p>
+              </div>
+
+              {isUser && (
+                <div>
+                  <button
                     onClick={() => handleDownloadCueSheet(album)}
                     className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg text-neutral-50 bg-orange-600 w-fit hover:bg-orange-500 transition-colors"
                   >
                     📋 Download Cue Sheet
                   </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
 
         {/* Delete Progress */}
         {deleteProgress.length > 0 && (
@@ -393,9 +329,7 @@ export default function AlbumPageClient({
                       {progress.status}
                     </span>
                   </div>
-                  {progress.error && (
-                    <p className="text-red-600 text-xs mt-1">{progress.error}</p>
-                  )}
+                  {progress.error && <p className="text-red-600 text-xs mt-1">{progress.error}</p>}
                 </div>
               ))}
             </div>
@@ -419,21 +353,32 @@ export default function AlbumPageClient({
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Tracks</h2>
-            <span className="text-sm text-gray-500">{tracks.length} track{tracks.length !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-gray-500">
+              {tracks.length} track{tracks.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
           <div className="grid gap-4">
             {tracks.map((track, index) => (
-              <TrackCard key={track.id} track={track} index={index} onClick={setSelectedTrack} onPlayClick={togglePlayPause} playingTrackId={playingTrackId}/>
+              <TrackCard
+                key={track.id}
+                track={track}
+                index={index}
+                onClick={setSelectedTrack}
+                onPlayClick={togglePlayPause}
+                playingTrackId={playingTrackId}
+              />
             ))}
-           
           </div>
         </div>
 
         {/* Track Details Modal */}
         {selectedTrack && (
-          <TrackModal track={selectedTrack} isUser={isUser} 
-            onClick={setSelectedTrack} onFavClick={handleAddToFavorites} 
+          <TrackModal
+            track={selectedTrack}
+            isUser={isUser}
+            onClick={setSelectedTrack}
+            onFavClick={handleAddToFavorites}
             onDownloadClick={handleDownload}
           />
         )}
@@ -472,9 +417,7 @@ export default function AlbumPageClient({
                   </li>
                 </ul>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
-                  <p className="text-red-700 text-sm font-medium">
-                    ⚠️ This action cannot be undone!
-                  </p>
+                  <p className="text-red-700 text-sm font-medium">⚠️ This action cannot be undone!</p>
                 </div>
 
                 <div className="flex gap-3">
@@ -499,23 +442,3 @@ export default function AlbumPageClient({
     </div>
   );
 }
-
-// Helper function to convert Timestamp to MM:SS format for duration
-const formatDuration = (timestamp: Timestamp): string => {
-  const seconds = timestamp.seconds;
-  if (seconds < 0 || seconds > 3600) {
-    console.log(
-      `Invalid duration seconds: ${seconds} for timestamp:`,
-      timestamp
-    );
-    return "0:00";
-  }
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
-
-// Helper function to convert Timestamp to date string
-const formatDate = (timestamp: Timestamp): string => {
-  return timestamp.toDate().toISOString().split("T")[0];
-};
