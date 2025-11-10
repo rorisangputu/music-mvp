@@ -39,7 +39,7 @@ export default function EditAlbumClient() {
 
       // Redirect after a short delay
       setTimeout(() => {
-        router.push(`/library/${albumId}`);
+        router.push(`/admin/dashboard/manage-library`);
       }, 1500);
     } else {
       setMessage({

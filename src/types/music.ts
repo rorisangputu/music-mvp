@@ -36,6 +36,7 @@ export interface UploadProgress {
 }
 
 export const CATEGORIES = [
+  "African Music",
   "Cinematic",
   "Corporate",
   "Electronic",
@@ -52,6 +53,10 @@ export const CATEGORIES = [
 ];
 
 export const GENRES = [
+  "Mbaqanga",
+  "Afro Tech",
+  "Afrobeats",
+  "African",
   "Orchestral",
   "Piano",
   "Guitar",

@@ -66,7 +66,7 @@ export const useAlbums = () => {
         const fetchAlbums = async () => {
             try {
                 setLoading(true);
-                const q = query(collection(db, 'albums'), orderBy('createdAt', 'desc'));
+                const q = query(collection(db, 'albums'), orderBy('genre', 'asc'));
                 const querySnapshot = await getDocs(q);
                 const data = querySnapshot.docs.map(
                     (doc) => ({ id: doc.id, ...doc.data() }) as Album

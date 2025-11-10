@@ -41,7 +41,7 @@ const NewReleases: React.FC<NewReleasesProps> = ({ className = "" }) => {
         // Create a query to get the latest albums (ordered by creation date, limited to 6)
         const albumsQuery = query(
           collection(db, "albums"),
-          orderBy("createdAt", "desc"),
+          orderBy("genre", "asc"),
           limit(8)
         );
 
