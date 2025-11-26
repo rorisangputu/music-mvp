@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import {
     collection,
+    doc,
+    getDoc,
     getDocs,
     query,
     where,
@@ -53,41 +55,73 @@ export const useFavourites = () => {
     };
 
     const fetchTrackDetails = async (favourites: Favourite[]) => {
-        setTracksLoading(true);
-        try {
-            const fetchedTracks: Track[] = [];
+    setTracksLoading(true);
+    try {
+        const fetchedTracks: Track[] = [];
 
-            for (const fav of favourites) {
-                try {
-                    const q = query(
-                        collection(db, "tracks"),
-                        where("id", "==", fav.trackId)
-                    );
-                    const querySnapshot = await getDocs(q);
-
-                    if (!querySnapshot.empty) {
-                        querySnapshot.forEach((doc) => {
-                            fetchedTracks.push({
-                                id: doc.id,
-                                ...doc.data(),
-                            } as Track);
-                        });
-                    } else {
-                        console.warn("Track not found for admin trackId:", fav.trackId);
-                    }
-                } catch (error) {
-                    console.error("Error querying track by trackId:", fav.trackId, error);
+        for (const fav of favourites) {
+            try {
+                // Use doc() and getDoc() since trackId is the Firestore document ID
+                const trackDocRef = doc(db, "tracks", fav.trackId);
+                const trackDoc = await getDoc(trackDocRef);
+                
+                if (trackDoc.exists()) {
+                    fetchedTracks.push({
+                        id: trackDoc.id,
+                        ...trackDoc.data(),
+                    } as Track);
+                } else {
+                    console.warn("Track not found for trackId:", fav.trackId);
                 }
+            } catch (error) {
+                console.error("Error fetching track:", fav.trackId, error);
             }
-
-            setFavouriteTracks(fetchedTracks);
-        } catch (error) {
-            console.error("Error fetching track details:", error);
-            setError("Failed to load track details");
-        } finally {
-            setTracksLoading(false);
         }
-    };
+
+        setFavouriteTracks(fetchedTracks);
+    } catch (error) {
+        console.error("Error fetching track details:", error);
+        setError("Failed to load track details");
+    } finally {
+        setTracksLoading(false);
+    }
+};
+    // const fetchTrackDetails = async (favourites: Favourite[]) => {
+    //     setTracksLoading(true);
+    //     try {
+    //         const fetchedTracks: Track[] = [];
+
+    //         for (const fav of favourites) {
+    //             try {
+    //                 const q = query(
+    //                     collection(db, "tracks"),
+    //                     where("id", "==", fav.trackId)
+    //                 );
+    //                 const querySnapshot = await getDocs(q);
+
+    //                 if (!querySnapshot.empty) {
+    //                     querySnapshot.forEach((doc) => {
+    //                         fetchedTracks.push({
+    //                             id: doc.id,
+    //                             ...doc.data(),
+    //                         } as Track);
+    //                     });
+    //                 } else {
+    //                     console.warn("Track not found for admin trackId:", fav.trackId);
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error querying track by trackId:", fav.trackId, error);
+    //             }
+    //         }
+
+    //         setFavouriteTracks(fetchedTracks);
+    //     } catch (error) {
+    //         console.error("Error fetching track details:", error);
+    //         setError("Failed to load track details");
+    //     } finally {
+    //         setTracksLoading(false);
+    //     }
+    // };
 
     useEffect(() => {
         fetchFavourites();
