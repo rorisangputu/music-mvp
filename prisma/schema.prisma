@@ -102,6 +102,18 @@ model Track {
   downloads Download[]
 }
 
+model Playlist {
+  id               String   @id // Use playlist config IDs
+  name             String
+  description      String
+  coverColor       String
+  trackIds         String[] // Firebase track IDs
+  targetGenres     String[] // For reference
+  targetCategories String[] // For reference
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model Download {
   id        String   @id @default(cuid())
   userId    String

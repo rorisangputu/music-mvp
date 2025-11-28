@@ -64,6 +64,31 @@ export default function AlbumPageClient({
   const [deleteMessage, setDeleteMessage] = useState({ type: "", text: "" });
   const [downloaded, setDownloaded] = useState<boolean>(false);
 
+  const handleAddToPlaylist = async (trackId: string, playlistId: string) => {
+    try {
+      const response = await fetch("/api/playlists/add-track", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          trackId,
+          playlistId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to add track to playlist");
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error adding track to playlist:", error);
+      throw error;
+    }
+  };
+
   const handleDeleteAlbum = async () => {
     if (!album || !albumId) return;
 
@@ -367,6 +392,8 @@ export default function AlbumPageClient({
                 onClick={setSelectedTrack}
                 onPlayClick={togglePlayPause}
                 playingTrackId={playingTrackId}
+                isAdmin={!!isAdmin}
+                onAddToPlaylist={handleAddToPlaylist}
               />
             ))}
           </div>
