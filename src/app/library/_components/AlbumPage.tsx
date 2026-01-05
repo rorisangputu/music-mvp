@@ -5,10 +5,17 @@ import { useAlbums } from "@/lib/useAlbums";
 import { CATEGORIES, GENRES } from "@/types/music";
 import { X, Play, Pause, Download, Heart, FileText, Clock } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, getDoc, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+  Timestamp,
+} from "firebase/firestore";
 import AlbumCard from "./AlbumCard";
 import { success } from "zod";
-
 
 type Track = {
   id: string;
@@ -40,11 +47,11 @@ type Album = {
   releaseDate?: string;
 };
 
-interface AlbumPageProps{
-    isAdmin: boolean | null;
-    isUser: boolean | null;
+interface AlbumPageProps {
+  isAdmin: boolean | null;
+  isUser: boolean | null;
 }
-const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
+const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
   const {
     albums,
     loading,
@@ -68,12 +75,15 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const[downloaded, setDownloaded] = useState<boolean>(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(
+    null
+  );
+  const [downloaded, setDownloaded] = useState<boolean>(false);
 
   // Helper functions
   const convertSecondsToMinutes = (seconds: number): string => {
-    if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0) return "0:00";
+    if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0)
+      return "0:00";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
@@ -95,8 +105,6 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     return new Date(timestamp).toISOString().split("T")[0];
   };
 
-
-  // Fetch album details and tracks
   const fetchAlbumDetails = async (albumId: string) => {
     setLoadingTracks(true);
     try {
@@ -131,6 +139,13 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
       const sorted = data.sort((a, b) => a.title.localeCompare(b.title));
       setAlbumTracks(sorted);
+      
+      // Preload first track
+      if (sorted.length > 0) {
+        const audio = new Audio(sorted[0].audioUrl);
+        setCurrentAudio(audio);
+        setPlayingTrackId(sorted[0].id);
+      }
     } catch (error) {
       console.error('Error fetching album details:', error);
     } finally {
@@ -153,7 +168,11 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     setPlayingTrackId(null);
   };
 
-  const incrementPlayCount = async (trackId: string, title: string, url: string) => {
+  const incrementPlayCount = async (
+    trackId: string,
+    title: string,
+    url: string
+  ) => {
     try {
       const res = await fetch("/api/tracks/play", {
         method: "POST",
@@ -161,35 +180,46 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
         body: JSON.stringify({ trackId, title, url }),
       });
 
-      if(!res.ok){
+      if (!res.ok) {
         const errorData = await res.json();
-        return {success: false, message: errorData.message, code: 400}
+        return { success: false, message: errorData.message, code: 400 };
       }
-      return {success: true, message: "Play count incremented", code: 200}
+      return { success: true, message: "Play count incremented", code: 200 };
     } catch (error) {
-      return {success: false, message: "Server Error", code: 500}
+      return { success: false, message: "Server Error", code: 500 };
     }
   };
 
-  const incrementDownloadCount = async(trackId: string, title: string, url:string) => {
+  const incrementDownloadCount = async (
+    trackId: string,
+    title: string,
+    url: string
+  ) => {
     try {
       const response = await fetch("/api/tracks/download", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({trackId, title, url}),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId, title, url }),
       });
 
-      if(!response.ok){
+      if (!response.ok) {
         const errorData = await response.json();
-        return{success: false, message: errorData.message || "Error incrementing", code: 400}
+        return {
+          success: false,
+          message: errorData.message || "Error incrementing",
+          code: 400,
+        };
       }
 
-      return {success: true, message: "Download Count incremented", code: 200}
+      return {
+        success: true,
+        message: "Download Count incremented",
+        code: 200,
+      };
     } catch (error) {
-      return {success: false, message: "Server Error", code: 500}
+      return { success: false, message: "Server Error", code: 500 };
     }
-  }
-
+  };
 
   // Audio playback
   const togglePlayPause = (track: Track) => {
@@ -209,15 +239,17 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
       setCurrentAudio(audio);
       setPlayingTrackId(track.id);
 
-      audio.play().then(() => {
-        // ✅ only increment once playback actually starts
-        incrementPlayCount(track.id, track.title, track.audioUrl);
-      })
-      .catch(error => {
-        console.error('Error playing audio:', error);
-        setPlayingTrackId(null);
-        setCurrentAudio(null);
-      });
+      audio
+        .play()
+        .then(() => {
+          // ✅ only increment once playback actually starts
+          incrementPlayCount(track.id, track.title, track.audioUrl);
+        })
+        .catch((error) => {
+          console.error("Error playing audio:", error);
+          setPlayingTrackId(null);
+          setCurrentAudio(null);
+        });
 
       audio.onended = () => {
         setPlayingTrackId(null);
@@ -253,7 +285,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
 
   const handleDownload = async (track: Track) => {
     if (!track.downloadable) {
-      alert("This track is not available for download")
+      alert("This track is not available for download");
     }
 
     const link = document.createElement("a");
@@ -262,20 +294,20 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  
-    const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
 
-    if(increment.success) {
+    const increment = await incrementDownloadCount(
+      track.id,
+      track.title,
+      track.audioUrl
+    );
 
-      setDownloaded(true)
+    if (increment.success) {
+      setDownloaded(true);
       alert("Track downloade!");
-
-    }else {
+    } else {
       const error = await increment;
       alert(error.message || "Failed to download");
     }
-
-    
   };
 
   const handleDownloadCueSheet = (track: Track) => {
@@ -299,8 +331,18 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
     };
   }, [currentAudio]);
 
-  if (loading) return <div className="flex justify-center py-44 bg-white text-blue-600">Loading albums...</div>;
-  if (error) return <div className="flex justify-center py-44 bg-white text-red-500">{error}</div>;
+  if (loading)
+    return (
+      <div className="flex justify-center py-44 bg-white text-blue-600">
+        Loading albums...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="flex justify-center py-44 bg-white text-red-500">
+        {error}
+      </div>
+    );
 
   return (
     <div className="w-full bg-gray-50 py-10 min-h-screen">
@@ -332,7 +374,9 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
           >
             <option value="">All Categories</option>
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
 
@@ -343,7 +387,9 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
           >
             <option value="">All Genres</option>
             {GENRES.map((genre) => (
-              <option key={genre} value={genre}>{genre}</option>
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
             ))}
           </select>
 
@@ -371,12 +417,18 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
         {albums.length > 0 ? (
           <div className="grid gap-6 grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 mb-8">
             {albums.map((album) => (
-              <AlbumCard key={album.id} album={album} onClick={handleAlbumClick}/>
+              <AlbumCard
+                key={album.id}
+                album={album}
+                onClick={handleAlbumClick}
+              />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No albums found matching your criteria.</p>
+            <p className="text-gray-500 text-lg">
+              No albums found matching your criteria.
+            </p>
             <button
               onClick={clearFilters}
               className="mt-4 text-orange-600 hover:text-orange-800 underline"
@@ -398,32 +450,39 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
             </button>
 
             <div className="flex gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                const showPage =
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1);
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => {
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1);
 
-                if (!showPage) {
-                  if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="px-2 py-2">...</span>;
+                  if (!showPage) {
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2 py-2">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
                   }
-                  return null;
-                }
 
-                return (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-2 rounded border ${page === currentPage
-                      ? 'bg-orange-600 text-white border-orange-600'
-                      : 'bg-white hover:bg-gray-50'
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-2 rounded border ${
+                        page === currentPage
+                          ? "bg-orange-600 text-white border-orange-600"
+                          : "bg-white hover:bg-gray-50"
                       }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
+                    >
+                      {page}
+                    </button>
+                  );
+                }
+              )}
             </div>
 
             <button
@@ -445,6 +504,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
       </div>
 
       {/* Album Details Modal */}
+      {/* Add Music Player Scrubber */}
       {selectedAlbum && (
         <div
           className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
@@ -476,7 +536,9 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
                   />
                 )}
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{selectedAlbum.title}</h1>
+                  <h1 className="text-3xl font-bold mb-2">
+                    {selectedAlbum.title}
+                  </h1>
                   <p className="text-gray-700 text-sm mb-1">
                     <strong>Category:</strong> {selectedAlbum.category}
                   </p>
@@ -485,7 +547,9 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
                       <strong>Genre:</strong> {selectedAlbum.genre}
                     </p>
                   )}
-                  <p className="text-gray-600 mt-2">{selectedAlbum.description}</p>
+                  <p className="text-gray-600 mt-2">
+                    {selectedAlbum.description}
+                  </p>
 
                   {selectedAlbum.cueSheet && (
                     <div className="mt-4">
@@ -509,7 +573,9 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
                 </div>
               ) : (
                 <div className="space-y-4 ">
-                  <h3 className="text-xl font-semibold mb-4">Tracks ({albumTracks.length})</h3>
+                  <h3 className="text-xl font-semibold mb-4">
+                    Tracks ({albumTracks.length})
+                  </h3>
                   {albumTracks.map((track) => (
                     <div
                       key={track.id}
@@ -517,10 +583,14 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
-                          <h4 className="text-md font-semibold line-clamp-1 w-fit">{track.title}</h4>
+                          <h4 className="text-md font-semibold line-clamp-1 w-fit">
+                            {track.title}
+                          </h4>
                           <p className="text-sm text-gray-600">
                             By {track.composer} — {track.duration}
-                            {track.bpm && <span className="ml-2">{track.bpm} BPM</span>}
+                            {track.bpm && (
+                              <span className="ml-2">{track.bpm} BPM</span>
+                            )}
                           </p>
                         </div>
                         <div className="flex gap-2 ml-4">
@@ -551,6 +621,7 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
               )}
             </div>
           </div>
+          
         </div>
       )}
 
@@ -581,67 +652,83 @@ const AlbumsPage = ({isAdmin, isUser}:AlbumPageProps) => {
               Duration: {selectedTrack.duration}
             </p>
 
-
             <div className="flex flex-col space-y-2">
               <h2 className="font-bold text-gray-700">Info:</h2>
               <div className="grid grid-cols-2 text-sm text-gray-700 space-y-1 mb-4">
-              <p><strong>Track Number:</strong> {selectedTrack.trackNumber}</p>
-              <p><strong>Category:</strong> {selectedTrack.category}</p>
-              <p><strong>Genre:</strong> {selectedTrack.genre}</p>
-              <p><strong>Mood:</strong> {selectedTrack.mood}</p>
-              <p><strong>Date Added:</strong> {formatDateString(selectedTrack.createdAt)}</p>
-              <p><strong>ISRC No:</strong> {selectedTrack.isrc}</p>
-            </div>
+                <p>
+                  <strong>Track Number:</strong> {selectedTrack.trackNumber}
+                </p>
+                <p>
+                  <strong>Category:</strong> {selectedTrack.category}
+                </p>
+                <p>
+                  <strong>Genre:</strong> {selectedTrack.genre}
+                </p>
+                <p>
+                  <strong>Mood:</strong> {selectedTrack.mood}
+                </p>
+                <p>
+                  <strong>Date Added:</strong>{" "}
+                  {formatDateString(selectedTrack.createdAt)}
+                </p>
+                <p>
+                  <strong>ISRC No:</strong> {selectedTrack.isrc}
+                </p>
+              </div>
             </div>
 
             {/* Actions */}
-            {isUser && <div className="space-y-2">
-              <div className="border-t pt-3">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Actions</h3>
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleAddToFavorites(selectedTrack)}
-                    className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                  >
-                    <Heart className="w-4 h-4" />
-                    Add to Favorites
-                  </button>
-
-                  {selectedTrack.downloadable && (
+            {isUser && (
+              <div className="space-y-2">
+                <div className="border-t pt-3">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Actions
+                  </h3>
+                  <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => handleDownload(selectedTrack)}
+                      onClick={() => handleAddToFavorites(selectedTrack)}
                       className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
                     >
-                      <Download className="w-4 h-4" />
-                      Download Track
+                      <Heart className="w-4 h-4" />
+                      Add to Favorites
                     </button>
-                  )}
 
-                  {selectedTrack.cueSheetUrl && (
-                    <button
-                      onClick={() => handleDownloadCueSheet(selectedTrack)}
-                      className="w-full py-2 px-3 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                    {selectedTrack.downloadable && (
+                      <button
+                        onClick={() => handleDownload(selectedTrack)}
+                        className="w-full py-2 px-3 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download Track
+                      </button>
+                    )}
+
+                    {selectedTrack.cueSheetUrl && (
+                      <button
+                        onClick={() => handleDownloadCueSheet(selectedTrack)}
+                        className="w-full py-2 px-3 bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Download Cue Sheet
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedTrack.cueSheetUrl && (
+                  <div className="mt-4 pt-3 border-t">
+                    <a
+                      href={selectedTrack.cueSheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-orange-600 hover:text-orange-800 underline text-sm"
                     >
-                      <FileText className="w-4 h-4" />
-                      Download Cue Sheet
-                    </button>
-                  )}
-                </div>
+                      View Cue Sheet Online
+                    </a>
+                  </div>
+                )}
               </div>
-
-              {selectedTrack.cueSheetUrl && (
-                <div className="mt-4 pt-3 border-t">
-                  <a
-                    href={selectedTrack.cueSheetUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-orange-600 hover:text-orange-800 underline text-sm"
-                  >
-                    View Cue Sheet Online
-                  </a>
-                </div>
-              )}
-            </div>}
+            )}
           </div>
         </div>
       )}
