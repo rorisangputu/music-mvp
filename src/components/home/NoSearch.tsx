@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import composer from "../../../public/Composer-rafiki.png";
-import { MoveRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface NoSearchProps {
   className?: string;
@@ -10,94 +10,192 @@ interface NoSearchProps {
 
 const NoSearch: React.FC<NoSearchProps> = ({ className = "" }) => {
   return (
-    <section
-      className={`w-full max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 ${className}`}
-      aria-labelledby="nosearch-heading"
-    >
-      <div className="bg-gradient-to-br from-white via-gray-50 to-orange-50/30 rounded-2xl shadow-2xl border border-gray-100/50 overflow-hidden backdrop-blur-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[500px]">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Syne:wght@700;800&family=Manrope:wght@400;500;600&display=swap');
 
-          {/* Content Section */}
-          <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12 space-y-8">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
-                  Production Music Excellence
-                </div>
+        .ns-root {
+          width: 100%;
+          background: #fffcf2;
+          border-top: 1px solid #ccc5b9;
+          position: relative;
+        }
 
-                <h1
-                  id="nosearch-heading"
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight"
-                >
-                  Your Trusted Source for{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">
-                    African
-                  </span>{" "}
-                  and International Production Music
-                </h1>
+        .ns-inner {
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 5rem 3rem;
+        }
+
+        /* ── Two-col bordered card ── */
+        .ns-card {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          border-left: 1px solid #ccc5b9;
+          border-top: 1px solid #ccc5b9;
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* Orange top stripe */
+        .ns-card::before {
+          content: '';
+          position: absolute; top: 0; left: 0;
+          width: 100%; height: 3px;
+          background: #eb5e28; z-index: 2;
+        }
+
+        /* ── Left: content ── */
+        .ns-left {
+          border-right: 1px solid #ccc5b9;
+          border-bottom: 1px solid #ccc5b9;
+          padding: 4rem 3rem;
+          display: flex; flex-direction: column;
+          justify-content: center; gap: 2rem;
+        }
+
+        .ns-eyebrow {
+          display: flex; align-items: center; gap: 0.75rem;
+        }
+        .ns-eyebrow-line { width: 28px; height: 1px; background: #eb5e28; flex-shrink: 0; }
+        .ns-eyebrow-text {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.65rem; font-weight: 600;
+          letter-spacing: 0.18em; text-transform: uppercase;
+          color: #403d39; opacity: 0.55;
+        }
+
+        .ns-title {
+          font-family: 'Bricolage Grotesque', sans-serif;
+          font-weight: 800;
+          font-size: clamp(2rem, 4vw, 3.75rem);
+          letter-spacing: -0.02em; line-height: 0.95;
+          text-transform: uppercase; color: #252422;
+        }
+        .ns-title em { font-style: normal; color: #eb5e28; }
+
+        .ns-desc {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.92rem; font-weight: 400;
+          line-height: 1.75; color: #403d39;
+          opacity: 0.65; max-width: 460px;
+        }
+
+        /* CTAs */
+        .ns-ctas { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+        .ns-cta-primary {
+          font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+          color: #fffcf2; background: #eb5e28; border: none;
+          padding: 0.85rem 1.75rem; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .ns-cta-primary:hover { background: #d44c10; transform: translateY(-1px); }
+
+        .ns-cta-secondary {
+          font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+          color: #403d39; background: none;
+          border: 1px solid #ccc5b9;
+          padding: 0.85rem 1.75rem; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .ns-cta-secondary:hover { border-color: #eb5e28; color: #eb5e28; }
+
+        /* ── Right: illustration ── */
+        .ns-right {
+          border-right: 1px solid #ccc5b9;
+          border-bottom: 1px solid #ccc5b9;
+          background: #f5f0e8;
+          display: flex; align-items: center; justify-content: center;
+          padding: 3rem;
+          position: relative; overflow: hidden;
+        }
+
+        /* Dot grid on right panel */
+        .ns-right::after {
+          content: '';
+          position: absolute; inset: 0;
+          background-image: radial-gradient(circle, rgba(64,61,57,0.07) 1px, transparent 1px);
+          background-size: 24px 24px;
+          pointer-events: none;
+        }
+
+        .ns-illustration {
+          position: relative; z-index: 1;
+          width: 100%; max-width: 360px;
+          filter: drop-shadow(0 8px 24px rgba(37,36,34,0.1));
+          transition: transform 0.5s ease;
+        }
+        .ns-right:hover .ns-illustration { transform: translateY(-6px); }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+          .ns-card  { grid-template-columns: 1fr; }
+          .ns-right { min-height: 360px; }
+          .ns-left  { padding: 3rem 2rem; }
+        }
+        @media (max-width: 640px) {
+          .ns-inner { padding: 3rem 1.5rem; }
+          .ns-left  { padding: 2.5rem 1.5rem; }
+          .ns-right { padding: 2rem 1.5rem; min-height: 280px; }
+        }
+      `}</style>
+
+      <section className={`ns-root ${className}`}>
+        <div className="ns-inner">
+          <div className="ns-card">
+
+            {/* Left — content */}
+            <div className="ns-left">
+              <div className="ns-eyebrow">
+                <span className="ns-eyebrow-line" />
+                <span className="ns-eyebrow-text">Production Music Excellence</span>
               </div>
 
-              <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">
-                With decades of experience in the industry, CMMG connects
-                filmmakers, broadcasters, and media creators with high-quality
-                production music. Our close collaborations with African and global
-                composers ensure an authentic and diverse catalog tailored for TV,
-                radio, film, and multimedia projects.
+              <h2 className="ns-title">
+                Your Trusted Source for{" "}
+                <em>African</em> &<br />
+                International Music
+              </h2>
+
+              <p className="ns-desc">
+                CMMG connects filmmakers, broadcasters, and media creators with
+                high-quality production music. Our collaborations with African
+                and global composers ensure an authentic, diverse catalog tailored
+                for TV, radio, film, and multimedia projects.
               </p>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/about-us"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-500/25"
-                aria-label="Learn more about CMMG on our About Us page"
-              >
-                About Us
-                <MoveRight
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                  size={20}
-                />
-              </Link>
-
-              <Link
-                href="/catalog"
-                className="group inline-flex items-center justify-center gap-3 px-8 py-4 border-2 border-orange-500 text-orange-600 font-semibold text-lg rounded-xl hover:bg-orange-50 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-orange-500/25"
-              >
-                Browse Catalog
-                <MoveRight
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                  size={20}
-                />
-              </Link>
-            </div>
-          </div>
-
-          {/* Image Section */}
-          <div className="relative flex items-center justify-center p-8 sm:p-10 lg:p-12">
-            <div className="relative w-full max-w-lg">
-              {/* Background decoration */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-200/30 to-orange-300/20 rounded-3xl transform rotate-3 scale-105"></div>
-              <div className="absolute inset-0 bg-gradient-to-tl from-orange-100/40 to-transparent rounded-3xl transform -rotate-2 scale-110"></div>
-
-              {/* Main image container */}
-              <div className="relative bg-white rounded-2xl shadow-xl p-4 transform hover:scale-105 transition-transform duration-500">
-                <Image
-                  src={composer}
-                  alt="Illustration of a composer creating music, representing CMMG's collaboration with African and international musicians"
-                  className="w-full h-auto rounded-xl"
-                  priority
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
-                />
+              <div className="ns-ctas">
+                <Link href="/about-us" className="ns-cta-primary">
+                  About Us
+                  <ArrowRight size={13} />
+                </Link>
+                <Link href="/catalog" className="ns-cta-secondary">
+                  Browse Catalog
+                  <ArrowRight size={13} />
+                </Link>
               </div>
-
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 w-8 h-8 bg-orange-400 rounded-full opacity-80 animate-pulse"></div>
-              <div className="absolute -bottom-6 -left-6 w-6 h-6 bg-orange-300 rounded-full opacity-60 animate-pulse delay-1000"></div>
             </div>
+
+            {/* Right — illustration */}
+            <div className="ns-right">
+              <Image
+                src={composer}
+                alt="Composer illustration"
+                className="ns-illustration"
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+            </div>
+
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 

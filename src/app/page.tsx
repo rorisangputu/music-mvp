@@ -22,8 +22,9 @@ export default function Home() {
       </div>
       <div className="bg-gray-50">
         <NewReleases />
-        <NoSearch />
         <TrendingPlaylist />
+        <NoSearch />
+        
       </div>
     </div>
   );

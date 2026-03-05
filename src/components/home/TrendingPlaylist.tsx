@@ -1,11 +1,8 @@
-// components/home/TrendingPlaylist.tsx
 import React from "react";
-import { Button } from "../ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, TrendingUp, MoveRight } from "lucide-react";
+import { ArrowRight, TrendingUp } from "lucide-react";
 
-// Import images
 import amapiano from "../../../public/amapiano.jpg";
 import classical from "../../../public/classical.webp";
 import pop from "../../../public/pop.jpg";
@@ -13,166 +10,6 @@ import tv from "../../../public/tv.jpeg";
 import victory from "../../../public/victory music.jpg";
 import africa from "../../../public/africa.jpg";
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
-interface TrendingPlaylistProps {
-  className?: string;
-}
-
-const TrendingPlaylist: React.FC<TrendingPlaylistProps> = ({ className = "" }) => {
-  return (
-    <section className={`w-full py-12 lg:py-16 bg-gradient-to-br from-slate-50 via-white to-orange-50/30 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                  Trending Playlists
-                </h2>
-              </div>
-              <p className="text-gray-600 text-lg">
-                Discover the most popular music collections right now
-              </p>
-            </div>
-
-            <Button
-              variant="outline"
-              className="group border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
-            >
-              <Link href="/playlists" className="flex items-center gap-2 uppercase font-semibold">
-                <span>Show All</span>
-                <MoveRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Carousel */}
-          <div className="relative">
-            <Carousel className="w-full">
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {playlists.map((playlist, i) => (
-                  <CarouselItem
-                    key={i}
-                    className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4"
-                  >
-                    <Link href={`/playlists/${playlist.id}`}>
-                      <div className="group relative h-[450px] w-full rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:scale-[1.02]">
-                        {/* Background Image */}
-                        <Image
-                          src={playlist.image}
-                          alt={`${playlist.title} playlist cover`}
-                          fill
-                          className="object-cover object-center transition-transform duration-700 group-hover:scale-110"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
-
-                        {/* Gradient Overlays */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/40"></div>
-
-                        {/* Play Button - Appears on Hover */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                            <Play className="h-8 w-8 text-gray-900 ml-1" fill="currentColor" />
-                          </div>
-                        </div>
-
-                        {/* Trending Badge */}
-                        <div className="absolute top-4 right-4">
-                          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            TRENDING
-                          </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="absolute inset-0 flex flex-col justify-end">
-                          <div className="p-6 space-y-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                            {/* Category Tag */}
-                            <div className="inline-block">
-                              <span className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-md border border-white/30">
-                                {playlist.category || "Playlist"}
-                              </span>
-                            </div>
-
-                            {/* Title */}
-                            <h3 className="text-white font-bold text-xl lg:text-2xl uppercase tracking-wide drop-shadow-lg">
-                              {playlist.title}
-                            </h3>
-
-                            {/* Description */}
-                            <p className="text-white/90 text-sm lg:text-base leading-relaxed drop-shadow-sm">
-                              {playlist.description}
-                            </p>
-
-                            {/* Stats */}
-                            <div className="flex items-center gap-4 text-white/80 text-sm">
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                <span>{playlist.trackCount || "Auto"} tracks</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <TrendingUp className="h-3 w-3" />
-                                <span>{playlist.popularity || "Hot"}</span>
-                              </div>
-                            </div>
-
-                            {/* Action Button - Hidden by default, shows on hover */}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 pt-2">
-                              <Button
-                                size="sm"
-                                className="bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white hover:text-gray-900 transition-all duration-300"
-                              >
-                                Explore Playlist
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-
-              {/* Navigation */}
-              <CarouselPrevious className="hidden md:flex -left-4 lg:-left-6 bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-white hover:scale-110 transition-all shadow-lg" />
-              <CarouselNext className="hidden md:flex -right-4 lg:-right-6 bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-white hover:scale-110 transition-all shadow-lg" />
-            </Carousel>
-          </div>
-
-          {/* Bottom CTA */}
-          <div className="text-center pt-8">
-            <div className="inline-flex items-center gap-2 text-gray-600">
-              <div className="flex -space-x-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-white"></div>
-                ))}
-              </div>
-              <span className="text-sm font-medium">
-                Join thousands discovering new music daily
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-export default TrendingPlaylist;
-
-// Playlist data matching the playlist routes
 const playlists = [
   {
     id: "afro-tech-house",
@@ -180,8 +17,7 @@ const playlists = [
     image: amapiano,
     description: "High-energy Afro Tech and House beats with African rhythms",
     category: "Electronic",
-    trackCount: "Auto",
-    popularity: "🔥 Hot"
+    popularity: "Hot",
   },
   {
     id: "african-rhythms",
@@ -189,8 +25,7 @@ const playlists = [
     image: africa,
     description: "Traditional and contemporary sounds from across the continent",
     category: "World Music",
-    trackCount: "Auto",
-    popularity: "🌍 Global"
+    popularity: "Global",
   },
   {
     id: "cinematic-orchestral",
@@ -198,8 +33,7 @@ const playlists = [
     image: tv,
     description: "Epic orchestral and dramatic cinematic compositions",
     category: "Cinematic",
-    trackCount: "Auto",
-    popularity: "🎬 Featured"
+    popularity: "Featured",
   },
   {
     id: "corporate-upbeat",
@@ -207,8 +41,7 @@ const playlists = [
     image: victory,
     description: "Professional, motivational tracks for business and presentations",
     category: "Corporate",
-    trackCount: "Auto",
-    popularity: "📈 Rising"
+    popularity: "Rising",
   },
   {
     id: "electronic-dance",
@@ -216,8 +49,7 @@ const playlists = [
     image: pop,
     description: "Energetic electronic, techno, and house music",
     category: "Electronic",
-    trackCount: "Auto",
-    popularity: "⚡ Energy"
+    popularity: "Energy",
   },
   {
     id: "ambient-chill",
@@ -225,7 +57,317 @@ const playlists = [
     image: classical,
     description: "Mellow, atmospheric tracks for relaxation and focus",
     category: "Ambient",
-    trackCount: "Auto",
-    popularity: "🎼 Timeless"
+    popularity: "Timeless",
   },
 ];
+
+const TrendingPlaylists = () => {
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Syne:wght@700;800&family=Manrope:wght@400;500;600&display=swap');
+
+        .lib-tp-root {
+          width: 100%;
+          background: #252422;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* Dot grid */
+        .lib-tp-root::after {
+          content: '';
+          position: absolute; inset: 0;
+          background-image: radial-gradient(circle, rgba(204,197,185,0.06) 1px, transparent 1px);
+          background-size: 28px 28px;
+          pointer-events: none; z-index: 0;
+        }
+
+        /* Orange left stripe */
+        .lib-tp-root::before {
+          content: '';
+          position: absolute; left: 0; top: 0;
+          width: 3px; height: 100%;
+          background: linear-gradient(to bottom, transparent, #eb5e28 20%, #eb5e28 80%, transparent);
+          pointer-events: none; z-index: 2;
+        }
+
+        .lib-tp-inner {
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 5rem 3rem;
+          position: relative; z-index: 1;
+        }
+
+        /* ── Header ── */
+        .lib-tp-header {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          align-items: flex-end;
+          gap: 3rem;
+          margin-bottom: 3rem;
+          padding-bottom: 2.5rem;
+          border-bottom: 1px solid rgba(204,197,185,0.12);
+        }
+        .lib-tp-eyebrow {
+          display: flex; align-items: center;
+          gap: 0.75rem; margin-bottom: 1.25rem;
+        }
+        .lib-tp-eyebrow-line { width: 28px; height: 1px; background: #eb5e28; flex-shrink: 0; }
+        .lib-tp-eyebrow-text {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.65rem; font-weight: 600;
+          letter-spacing: 0.18em; text-transform: uppercase;
+          color: rgba(255,252,242,0.4);
+        }
+        .lib-tp-title {
+          font-family: 'Bricolage Grotesque', sans-serif;
+          font-weight: 800;
+          font-size: clamp(2.5rem, 5vw, 4.5rem);
+          letter-spacing: -0.02em; line-height: 0.95;
+          text-transform: uppercase; color: #fffcf2;
+        }
+        .lib-tp-title em { font-style: normal; color: #eb5e28; }
+
+        .lib-tp-header-right {
+          display: flex; flex-direction: column;
+          justify-content: flex-end; gap: 1.25rem;
+        }
+        .lib-tp-desc {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.9rem; font-weight: 400;
+          line-height: 1.7; color: rgba(255,252,242,0.65);
+          max-width: 380px;
+        }
+        .lib-tp-cta {
+          font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+          color: #fffcf2; background: #eb5e28; border: none;
+          padding: 0.8rem 1.75rem; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 0.5rem;
+          align-self: flex-start;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .lib-tp-cta:hover { background: #d44c10; transform: translateY(-1px); }
+
+        /* ── Grid ── */
+        .lib-tp-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          border-left: 1px solid rgba(204,197,185,0.1);
+          border-top: 1px solid rgba(204,197,185,0.1);
+        }
+
+        /* ── Card ── */
+        .lib-tp-card {
+          border-right: 1px solid rgba(204,197,185,0.1);
+          border-bottom: 1px solid rgba(204,197,185,0.1);
+          display: flex; flex-direction: column;
+          text-decoration: none;
+          position: relative; overflow: hidden;
+          background: #252422;
+          transition: background 0.25s ease;
+        }
+        .lib-tp-card:hover { background: #2e2b28; }
+
+        /* Orange top bar on hover */
+        .lib-tp-card::before {
+          content: '';
+          position: absolute; top: 0; left: 0;
+          width: 100%; height: 3px;
+          background: #eb5e28;
+          transform: scaleX(0); transform-origin: left;
+          transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+          z-index: 3;
+        }
+        .lib-tp-card:hover::before { transform: scaleX(1); }
+
+        /* Image */
+        .lib-tp-card-img {
+          width: 100%;
+          aspect-ratio: 16/10;
+          position: relative;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+        .lib-tp-card-img img {
+          width: 100%; height: 100%;
+          object-fit: cover; display: block;
+          transition: transform 0.6s ease;
+          filter: brightness(0.85) saturate(0.9);
+        }
+        .lib-tp-card:hover .lib-tp-card-img img {
+          transform: scale(1.05);
+          filter: brightness(0.75) saturate(1);
+        }
+
+        /* Trending badge */
+        .lib-tp-badge {
+          position: absolute; top: 0.85rem; right: 0.85rem;
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.55rem; font-weight: 700;
+          letter-spacing: 0.15em; text-transform: uppercase;
+          color: #fffcf2; background: #eb5e28;
+          padding: 0.22rem 0.55rem;
+          display: flex; align-items: center; gap: 0.3rem;
+          z-index: 2;
+        }
+
+        /* Category tag on image bottom */
+        .lib-tp-cat {
+          position: absolute; bottom: 0.85rem; left: 0.85rem;
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.55rem; font-weight: 700;
+          letter-spacing: 0.14em; text-transform: uppercase;
+          color: rgba(255,252,242,0.9);
+          background: rgba(37,36,34,0.75);
+          border: 1px solid rgba(204,197,185,0.2);
+          padding: 0.22rem 0.55rem;
+          z-index: 2;
+        }
+
+        /* Card body */
+        .lib-tp-card-body {
+          padding: 1.5rem;
+          display: flex; flex-direction: column;
+          gap: 0.5rem;
+          border-top: 1px solid rgba(204,197,185,0.08);
+          flex: 1;
+        }
+        .lib-tp-card-title {
+          font-family: 'Syne', sans-serif; font-weight: 700;
+          font-size: 0.95rem; letter-spacing: -0.01em;
+          text-transform: uppercase; color: #fffcf2;
+          line-height: 1.1;
+          transition: color 0.2s ease;
+        }
+        .lib-tp-card:hover .lib-tp-card-title { color: #eb5e28; }
+
+        .lib-tp-card-desc {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.75rem; font-weight: 400;
+          line-height: 1.55; color: rgba(255,252,242,0.65);
+          flex: 1;
+        }
+
+        .lib-tp-card-footer {
+          display: flex; align-items: center;
+          justify-content: space-between;
+          padding-top: 0.75rem;
+          border-top: 1px solid rgba(204,197,185,0.08);
+          margin-top: auto;
+        }
+        .lib-tp-card-pop {
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.6rem; font-weight: 600;
+          letter-spacing: 0.14em; text-transform: uppercase;
+          color: rgba(255,252,242,0.65);
+        }
+        .lib-tp-card-arrow {
+          color: rgba(255,252,242,0.2);
+          transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .lib-tp-card:hover .lib-tp-card-arrow {
+          color: #eb5e28;
+          transform: translateX(4px);
+        }
+
+        /* ── Bottom note ── */
+        .lib-tp-bottom {
+          border-left: 1px solid rgba(204,197,185,0.1);
+          border-right: 1px solid rgba(204,197,185,0.1);
+          border-bottom: 1px solid rgba(204,197,185,0.1);
+          padding: 1.25rem 1.5rem;
+          display: flex; align-items: center;
+          justify-content: center; gap: 0.75rem;
+          font-family: 'Manrope', sans-serif;
+          font-size: 0.65rem; font-weight: 600;
+          letter-spacing: 0.14em; text-transform: uppercase;
+          color: rgba(255,252,242,0.9);
+        }
+        .lib-tp-bottom::before {
+          content: ''; display: block;
+          width: 20px; height: 1px; background: #eb5e28;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+          .lib-tp-header { grid-template-columns: 1fr; gap: 1.5rem; }
+          .lib-tp-grid   { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+          .lib-tp-inner { padding: 3rem 1.5rem; }
+          .lib-tp-grid  { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
+      <section className="lib-tp-root">
+        <div className="lib-tp-inner">
+
+          {/* Header */}
+          <div className="lib-tp-header">
+            <div>
+              <div className="lib-tp-eyebrow">
+                <span className="lib-tp-eyebrow-line" />
+                <span className="lib-tp-eyebrow-text">Popular Right Now</span>
+              </div>
+              <h2 className="lib-tp-title">
+                Trending <em>Playlists</em>
+              </h2>
+            </div>
+            <div className="lib-tp-header-right">
+              <p className="lib-tp-desc">
+                The most popular music collections right now — curated by
+                genre for film, advertising, and content creators.
+              </p>
+              <Link href="/playlists" className="lib-tp-cta">
+                All Playlists
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Grid */}
+          <div className="lib-tp-grid">
+            {playlists.map((playlist, i) => (
+              <Link key={i} href={`/playlists/${playlist.id}`} className="lib-tp-card">
+                <div className="lib-tp-card-img">
+                  <Image
+                    src={playlist.image}
+                    alt={playlist.title}
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                  <span className="lib-tp-badge">
+                    <TrendingUp size={9} />
+                    Trending
+                  </span>
+                  <span className="lib-tp-cat">{playlist.category}</span>
+                </div>
+
+                <div className="lib-tp-card-body">
+                  <div className="lib-tp-card-title">{playlist.title}</div>
+                  <p className="lib-tp-card-desc">{playlist.description}</p>
+                  <div className="lib-tp-card-footer">
+                    <span className="lib-tp-card-pop">{playlist.popularity}</span>
+                    <ArrowRight size={14} className="lib-tp-card-arrow" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Bottom note */}
+          <div className="lib-tp-bottom">
+            Discover new music daily — browse the full library
+          </div>
+
+        </div>
+      </section>
+    </>
+  );
+};
+
+export default TrendingPlaylists;
