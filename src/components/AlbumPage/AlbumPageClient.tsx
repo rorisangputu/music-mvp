@@ -393,6 +393,8 @@ export default function AlbumPageClient({
                 onPlayClick={togglePlayPause}
                 playingTrackId={playingTrackId}
                 isAdmin={!!isAdmin}
+                isUser={isUser}
+                onDownloadClick={handleDownload}
                 onAddToPlaylist={handleAddToPlaylist}
               />
             ))}

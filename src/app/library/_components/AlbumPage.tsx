@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAlbums } from "@/lib/useAlbums";
 import { CATEGORIES, GENRES } from "@/types/music";
 import {
@@ -46,7 +46,6 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const expandRef = useRef<HTMLDivElement>(null);
 
   // ── Helpers ──────────────────────────────────────────────
   const fmt = (seconds: number) => {
@@ -95,7 +94,6 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
     } else {
       setExpandedAlbumId(album.id);
       fetchAlbum(album.id);
-      setTimeout(() => expandRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
   };
 
@@ -146,6 +144,10 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trackId: track.id, title: track.title, url: track.audioUrl }),
     });
+  };
+
+  const handleSignUpForDownload = () => {
+    window.location.href = "/signup";
   };
 
   const handleCueSheet = (track: Track) => {
@@ -326,7 +328,7 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
         .ap-panel-close:hover { border-color:#eb5e28; color:#fffcf2; background:#eb5e28; }
 
         /* Right — track list */
-        .ap-panel-right { display:flex; flex-direction:column; }
+        .ap-panel-right { display:flex; flex-direction:column; min-width:0; }
         .ap-tracks-head {
           padding:1rem 1.5rem;
           border-bottom:1px solid rgba(204,197,185,.1);
@@ -412,6 +414,27 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
           transition:border-color .2s,color .2s;
         }
         .ap-options-btn:hover { border-color:#eb5e28; color:#eb5e28; }
+        .ap-track-actions {
+          display:flex; align-items:center; justify-content:flex-end;
+          gap:.5rem; flex-shrink:0; min-width:fit-content;
+        }
+        .ap-download-btn {
+          font-family:'Manrope',sans-serif; font-size:.6rem; font-weight:600;
+          letter-spacing:.1em; text-transform:uppercase;
+          color:#fffcf2; background:#eb5e28;
+          border:1px solid #eb5e28;
+          padding:.35rem .7rem; cursor:pointer; flex-shrink:0;
+          display:flex; align-items:center; gap:.35rem;
+          transition:background .2s,border-color .2s,color .2s;
+        }
+        .ap-download-btn:hover { background:#d44c10; border-color:#d44c10; }
+        .ap-signup-btn {
+          color:#eb5e28; background:none;
+          text-transform:none; letter-spacing:0;
+        }
+        .ap-signup-btn:hover {
+          background:#eb5e28; border-color:#eb5e28; color:#fffcf2;
+        }
 
         /* Loading spinner inside panel */
         .ap-spinner {
@@ -572,9 +595,75 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
           .ap-panel-cover { aspect-ratio:2/1; }
         }
         @media(max-width:640px) {
-          .ap-inner  { padding:2rem 1.5rem; }
-          .ap-grid   { grid-template-columns:repeat(2,1fr); }
+          .ap-inner  { padding:1.5rem 1rem; }
+          .ap-grid   { grid-template-columns:1fr; }
+          .ap-expand-row { min-width:0; overflow:hidden; }
+          .ap-panel-info { padding:1rem; }
+          .ap-panel-cover { aspect-ratio:16/9; }
+          .ap-tracks-head { padding:.85rem 1rem; }
           .ap-popup-grid { grid-template-columns:1fr; }
+          .ap-track-row {
+            display:grid;
+            grid-template-columns:36px minmax(0,1fr);
+            gap:.75rem;
+            align-items:center;
+            padding:.85rem 1rem;
+            min-width:0;
+          }
+          .ap-track-num,
+          .ap-track-dur {
+            display:none;
+          }
+          .ap-play-btn {
+            grid-column:1;
+            grid-row:1;
+            width:36px;
+            height:36px;
+          }
+          .ap-track-meta {
+            grid-column:2;
+            min-width:0;
+          }
+          .ap-track-title {
+            font-size:.78rem;
+            line-height:1.2;
+            white-space:normal;
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+          }
+          .ap-track-sub {
+            font-size:.62rem;
+            margin-top:.2rem;
+          }
+          .ap-track-actions {
+            grid-column:1 / -1;
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto;
+            justify-content:stretch;
+            width:100%;
+            min-width:0;
+          }
+          .ap-options-btn,
+          .ap-download-btn {
+            justify-content:center;
+            min-height:36px;
+            padding:.55rem .7rem;
+          }
+          .ap-options-btn {
+            grid-column:2;
+            min-width:64px;
+          }
+          .ap-download-btn {
+            grid-column:1;
+            grid-row:1;
+            min-width:0;
+            width:100%;
+          }
+          .ap-signup-btn {
+            white-space:normal;
+            line-height:1.1;
+          }
         }
       `}</style>
 
@@ -667,12 +756,6 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
             <div className="ap-grid">
               {albums.length > 0 ? albums.map((album, idx) => {
                 const isExpanded = expandedAlbumId === album.id;
-                // Insert expand row after the album that triggered it
-                // We need to also figure out after which row to insert
-                const COLS = 5;
-                const rowEnd = (Math.floor(idx / COLS) + 1) * COLS - 1;
-                const isLastInRow = idx === rowEnd || idx === albums.length - 1;
-                const isFirstExpanded = expandedAlbumId && albums.findIndex(a => a.id === expandedAlbumId) === idx;
 
                 return [
                   <div key={album.id} style={{ borderRight: "1px solid #ccc5b9", borderBottom: "1px solid #ccc5b9" }}>
@@ -683,9 +766,8 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
                     />
                   </div>,
 
-                  // After every row that contains the expanded album, insert expand panel
-                  isLastInRow && expandedAlbumId && albums.slice(Math.floor(idx / COLS) * COLS, idx + 1).some(a => a.id === expandedAlbumId) ? (
-                    <div key={`expand-${expandedAlbumId}`} className="ap-expand-row" ref={expandRef}>
+                  isExpanded ? (
+                    <div key={`expand-${album.id}`} className="ap-expand-row">
                       <button className="ap-panel-close" onClick={closeExpand} aria-label="Close">
                         <X size={14} />
                       </button>
@@ -752,9 +834,21 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
                                   </div>
                                 </div>
                                 <span className="ap-track-dur">{track.duration}</span>
-                                <button className="ap-options-btn" onClick={() => setSelectedTrack(track)}>
-                                  Info
-                                </button>
+                                <div className="ap-track-actions">
+                                  <button className="ap-options-btn" onClick={() => setSelectedTrack(track)}>
+                                    Info
+                                  </button>
+                                  {isUser && track.downloadable && (
+                                    <button className="ap-download-btn" onClick={() => handleDownload(track)}>
+                                      <Download size={12} /> Download
+                                    </button>
+                                  )}
+                                  {!isUser && !isAdmin && (
+                                    <button className="ap-download-btn ap-signup-btn" onClick={handleSignUpForDownload}>
+                                      <Download size={12} /> sign up for free download
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>

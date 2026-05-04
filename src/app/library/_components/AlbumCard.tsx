@@ -5,6 +5,7 @@ import AlbumCover from "./AlbumCover";
 type AlbumCardProps = {
   album: Album;
   onClick: (album: Album) => void;
+  active?: boolean;
 };
 
 type Album = {
@@ -19,11 +20,11 @@ type Album = {
 };
 
 
-const AlbumCard = ({album, onClick}: AlbumCardProps) => {
+const AlbumCard = ({album, onClick, active = false}: AlbumCardProps) => {
   return (
     <div
       onClick={() => onClick(album)}
-      className="hover cursor-pointer"
+      className={`hover cursor-pointer ${active ? "ring-2 ring-orange-600 ring-offset-2 ring-offset-[#fffcf2]" : ""}`}
     >
       <div className="aspect-square relative ">
         <Image

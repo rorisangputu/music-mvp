@@ -1,6 +1,6 @@
 // app/library/_components/TrackCard.tsx
 import React, { useState, useEffect } from "react";
-import { Pause, Play, ListPlus } from "lucide-react";
+import { Download, ListPlus, Pause, Play } from "lucide-react";
 import { PLAYLIST_CONFIGS } from "@/scripts/palylistConfig";
 
 type TrackCardProps = {
@@ -10,6 +10,8 @@ type TrackCardProps = {
   onPlayClick: (track: Track) => void;
   playingTrackId: string | null;
   isAdmin?: boolean;
+  isUser?: boolean | null;
+  onDownloadClick?: (track: Track) => void;
   onAddToPlaylist?: (trackId: string, playlistId: string) => Promise<void>;
 };
 
@@ -47,6 +49,8 @@ const TrackCard = ({
   onPlayClick,
   playingTrackId,
   isAdmin = false,
+  isUser = false,
+  onDownloadClick,
   onAddToPlaylist,
 }: TrackCardProps) => {
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
@@ -113,6 +117,11 @@ const TrackCard = ({
       exists: !!existing
     };
   });
+  const isLoggedOut = !isUser && !isAdmin;
+
+  const handleSignUpForDownload = () => {
+    window.location.href = "/signup";
+  };
 
   return (
     <div className="bg-white rounded-sm shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -138,7 +147,7 @@ const TrackCard = ({
         </div>
       </div>
 
-      <div className="flex flex-row justify-start items-center space-x-3">
+      <div className="flex flex-row flex-wrap justify-start items-center gap-3">
         <button
           onClick={() => onPlayClick(track)}
           className="px-2 py-2 bg-white text-orange-600 rounded hover:bg-orange-700 transition-colors"
@@ -151,11 +160,31 @@ const TrackCard = ({
         </button>
 
         <button
-          className="inline-flex items-center px-4 py-2 border flex-wrap w-fit border-transparent text-sm font-medium rounded text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-sm"
+          className="inline-flex items-center justify-center px-4 py-2 border w-fit max-sm:flex-1 max-sm:min-w-36 border-transparent text-sm font-medium rounded text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-sm"
           onClick={() => onClick(track)}
         >
           View Options
         </button>
+
+        {isUser && track.downloadable && onDownloadClick && (
+          <button
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-orange-600 text-sm font-medium rounded text-orange-600 bg-white hover:bg-orange-50 transition-colors shadow-sm max-sm:flex-1 max-sm:min-w-36"
+            onClick={() => onDownloadClick(track)}
+          >
+            <Download className="w-4 h-4" />
+            Download
+          </button>
+        )}
+
+        {isLoggedOut && (
+          <button
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-orange-600 text-sm font-medium rounded text-orange-600 bg-white hover:bg-orange-50 transition-colors shadow-sm max-sm:w-full"
+            onClick={handleSignUpForDownload}
+          >
+            <Download className="w-4 h-4" />
+            sign up for free download
+          </button>
+        )}
 
         {isAdmin && (
           <div className="relative">
