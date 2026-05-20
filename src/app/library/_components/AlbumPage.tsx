@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAlbums } from "@/lib/useAlbums";
-import { CATEGORIES, GENRES } from "@/types/music";
+import { CATEGORIES, GENRES, Track } from "@/types/music";
 import {
   X, Play, Pause, Download, Heart, FileText,
   ChevronLeft, ChevronRight, Search, SlidersHorizontal, ArrowRight
@@ -12,13 +12,9 @@ import {
   collection, getDocs, query, where, doc, getDoc, Timestamp,
 } from "firebase/firestore";
 import AlbumCard from "./AlbumCard";
+import PlayerBar from "./PlayBar";
 
-type Track = {
-  id: string; title: string; duration: string; composer: string;
-  audioUrl: string; cueSheetUrl?: string; category: string; genre: string;
-  mood: string[]; tags: string[]; bpm: number; isrc: string;
-  trackNumber: number; downloadable: boolean; createdAt: string; albumId: string;
-};
+
 
 type Album = {
   id: string; title: string; description: string; category: string;
@@ -45,8 +41,8 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   // ── Helpers ──────────────────────────────────────────────
   const fmt = (seconds: number) => {
     if (!seconds || isNaN(seconds) || seconds < 0) return "0:00";
@@ -106,16 +102,23 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
 
   // ── Audio ─────────────────────────────────────────────────
   const stopAudio = () => {
-    if (currentAudio) { currentAudio.pause(); setCurrentAudio(null); }
-    setPlayingTrackId(null);
+  if (audioRef.current) { audioRef.current.pause(); }
+  setIsPlaying(false);
+  setPlayingTrackId(null);
   };
 
   const togglePlay = (track: Track) => {
-    if (playingTrackId === track.id) { stopAudio(); return; }
-    stopAudio();
+    if (playingTrackId === track.id) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+      setPlayingTrackId(null);
+      return;
+    }
+    if (audioRef.current) audioRef.current.pause();
     const audio = new Audio(track.audioUrl);
-    setCurrentAudio(audio);
+    audioRef.current = audio;
     setPlayingTrackId(track.id);
+    setIsPlaying(true);
     audio.play()
       .then(() => fetch("/api/tracks/play", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -123,6 +126,24 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
       }))
       .catch(() => stopAudio());
     audio.onended = () => stopAudio();
+  };
+
+  const handlePlayerPlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
+    else { audioRef.current.play(); setIsPlaying(true); }
+  };
+
+  const handleNext = () => {
+    const idx = albumTracks.findIndex(t => t.id === playingTrackId);
+    const next = albumTracks[idx + 1];
+    if (next) togglePlay(next);
+  };
+
+  const handlePrev = () => {
+    const idx = albumTracks.findIndex(t => t.id === playingTrackId);
+    const prev = albumTracks[idx - 1];
+    if (prev) togglePlay(prev);
   };
 
   // ── Actions ───────────────────────────────────────────────
@@ -135,16 +156,24 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
   };
 
   const handleDownload = async (track: Track) => {
-    if (!track.downloadable) return alert("This track is not available for download.");
-    const a = document.createElement("a");
-    a.href = track.audioUrl;
-    a.download = `${track.title} - ${track.composer}.mp3`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    await fetch("/api/tracks/download", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trackId: track.id, title: track.title, url: track.audioUrl }),
-    });
-  };
+  if (!track.downloadable) return alert("This track is not available for download.");
+
+  const filename = `${track.title} - ${track.composer}.mp3`;
+  const proxyUrl = `/api/tracks/download?url=${encodeURIComponent(track.audioUrl)}&filename=${encodeURIComponent(filename)}`;
+
+  const a = document.createElement("a");
+  a.href = proxyUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  await fetch("/api/tracks/download", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackId: track.id, title: track.title, url: track.audioUrl }),
+  });
+};
 
   const handleSignUpForDownload = () => {
     window.location.href = "/signup";
@@ -158,7 +187,7 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  useEffect(() => () => stopAudio(), [currentAudio]);
+  useEffect(() => () => stopAudio(), []);
 
   const hasFilters = !!(search || categoryFilter || genreFilter);
 
@@ -981,6 +1010,17 @@ const AlbumsPage = ({ isAdmin, isUser }: AlbumPageProps) => {
           </div>
         </div>
       )}
+      <PlayerBar
+  track={albumTracks.find(t => t.id === playingTrackId) ?? null}
+  album={expandedAlbum}
+  isPlaying={isPlaying}
+  onPlayPause={handlePlayerPlayPause}
+  onNext={handleNext}
+  onPrev={handlePrev}
+  onClose={stopAudio}
+  onFavourite={handleFavourite}   // ← add this
+  audioRef={audioRef}
+/>
     </>
   );
 };
