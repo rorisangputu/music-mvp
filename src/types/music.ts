@@ -83,3 +83,11 @@ export const MOODS = [
   "Dark",
   "Peaceful",
 ];
+
+
+export type Track = {
+  id: string; title: string; duration: string; composer: string;
+  audioUrl: string; cueSheetUrl?: string; category: string; genre: string;
+  mood: string[]; tags: string[]; bpm: number; isrc: string;
+  trackNumber: number; downloadable: boolean; createdAt: string; albumId: string;
+};
