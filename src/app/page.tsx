@@ -5,6 +5,7 @@ import bg from "../../public/bg.png";
 import NewReleases from "@/components/home/NewReleases";
 import TrendingPlaylist from "@/components/home/TrendingPlaylist";
 import NoSearch from "@/components/home/NoSearch";
+import HomeTrackSearch from "@/components/home/HomeTrackSearch";
 
 export default function Home() {
   return (
@@ -20,11 +21,12 @@ export default function Home() {
         </div>
         <Hero />
       </div>
+
       <div className="bg-gray-50">
+        <HomeTrackSearch />
         <NewReleases />
         <TrendingPlaylist />
         <NoSearch />
-        
       </div>
     </div>
   );
