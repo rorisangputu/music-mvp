@@ -6,6 +6,7 @@ import NewReleases from "@/components/home/NewReleases";
 import TrendingPlaylist from "@/components/home/TrendingPlaylist";
 import NoSearch from "@/components/home/NoSearch";
 import HomeTrackSearch from "@/components/home/HomeTrackSearch";
+import { Suspense } from "react";
 
 export default function Home() {
   return (
@@ -23,7 +24,9 @@ export default function Home() {
       </div>
 
       <div className="bg-gray-50">
-        <HomeTrackSearch />
+        <Suspense fallback={null}>
+          <HomeTrackSearch />
+        </Suspense>
         <NewReleases />
         <TrendingPlaylist />
         <NoSearch />
