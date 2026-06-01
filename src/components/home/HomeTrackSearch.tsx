@@ -1,30 +1,37 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Play, Pause, Download, ArrowRight, X } from "lucide-react";
+import {
+  Search,
+  Play,
+  Pause,
+  Download,
+  ArrowRight,
+  X,
+  Share2,
+  Check,
+} from "lucide-react";
 import { Track } from "@/types/music";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const PREVIEW_COUNT = 6;
 const CACHE_KEY = "music_lib_tracks_v2";
 
-interface HomeTrackSearchProps {
-  isUser: boolean | null;
-  isAdmin: boolean | null;
-}
-
 export default function HomeTrackSearch() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [allTracks, setAllTracks] = useState<Track[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(searchParams.get("q") || "");
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [downloaded, setDownloaded] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preloadCache = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // ── Load from sessionStorage cache (shared with useTracks) ───────────────
+  // ── Load from sessionStorage cache ───────────────────────────────────────
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
@@ -36,7 +43,6 @@ export default function HomeTrackSearch() {
       }
     } catch {}
 
-    // Cache miss — fetch directly
     import("@/lib/firebase").then(({ db }) => {
       import("firebase/firestore").then(
         async ({ collection, getDocs, orderBy, query: fsQuery }) => {
@@ -60,7 +66,6 @@ export default function HomeTrackSearch() {
                 coverImage: albumCovers.get(dd.albumId) ?? undefined,
               } as Track;
             });
-            // Write to cache so useTracks benefits too
             try {
               sessionStorage.setItem(
                 CACHE_KEY,
@@ -77,6 +82,21 @@ export default function HomeTrackSearch() {
       );
     });
   }, []);
+
+  // ── Sync query → URL (shallow, no navigation) ────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (query.trim()) params.set("q", query.trim());
+    else params.delete("q");
+    const newUrl = `${window.location.pathname}${params.size ? `?${params}` : ""}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [query, searchParams]);
+
+  // ── Sync URL → query on mount (handles shared links) ─────────────────────
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setQuery(q);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Filter ───────────────────────────────────────────────────────────────
   const filtered = query.trim()
@@ -129,7 +149,75 @@ export default function HomeTrackSearch() {
     [playingId, stopAudio],
   );
 
-  // Go to library with search pre-filled
+  // ── Share ─────────────────────────────────────────────────────────────────
+  const handleShare = useCallback(async (track: Track) => {
+    const url = `${window.location.origin}/library?search=${encodeURIComponent(track.title)}`;
+
+    // Always copy to clipboard first so it's available regardless
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
+    } catch {}
+
+    // Then also open native share sheet if available (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: track.title,
+          text: `Check out "${track.title}" by ${track.composer}`,
+          url,
+        });
+      } catch {}
+    }
+
+    setCopiedId(track.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }, []);
+
+  // ── Download ──────────────────────────────────────────────────────────────
+  const incrementDownloadCount = async (
+    trackId: string,
+    title: string,
+    url: string,
+  ) => {
+    try {
+      const res = await fetch("/api/tracks/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId, title, url }),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        return { success: false, message: e.message || "Error" };
+      }
+      return { success: true };
+    } catch {
+      return { success: false, message: "Server Error" };
+    }
+  };
+
+  const handleDownload = async (track: Track) => {
+    if (!track.downloadable) {
+      alert("This track is not available for download.");
+      return;
+    }
+    const filename = `${track.title} - ${track.composer}.mp3`;
+    const proxyUrl = `/api/tracks/download?url=${encodeURIComponent(track.audioUrl)}&filename=${encodeURIComponent(filename)}`;
+    const a = document.createElement("a");
+    a.href = proxyUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    const inc = await incrementDownloadCount(
+      track.id,
+      track.title,
+      track.audioUrl,
+    );
+    if (inc.success) setDownloaded(track.id);
+    else alert(inc.message || "Failed to record download.");
+  };
+
   const goToLibrary = () => {
     const params = query.trim()
       ? `?search=${encodeURIComponent(query.trim())}`
@@ -147,7 +235,6 @@ export default function HomeTrackSearch() {
         .hts-root { width:100%; background:#fffcf2; padding:4rem 0 0; }
         .hts-inner { max-width:1440px; margin:0 auto; padding:0 3rem; }
 
-        /* ── Header ── */
         .hts-head { margin-bottom:2rem; }
         .hts-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:.75rem; }
         .hts-eyebrow-line { width:28px; height:1px; background:#eb5e28; }
@@ -162,11 +249,7 @@ export default function HomeTrackSearch() {
         }
         .hts-title em { font-style:normal; color:#eb5e28; }
 
-        /* ── Search ── */
-        .hts-search-row {
-          display:flex; gap:.75rem; align-items:stretch;
-          margin-bottom:2rem;
-        }
+        .hts-search-row { display:flex; gap:.75rem; align-items:stretch; margin-bottom:2rem; }
         .hts-search-wrap {
           position:relative; flex:1;
           border:1px solid #ccc5b9; background:#fffcf2;
@@ -182,10 +265,8 @@ export default function HomeTrackSearch() {
         }
         .hts-search-input::placeholder { color:#ccc5b9; }
         .hts-clear-btn {
-          position:absolute; right:.75rem;
-          background:none; border:none; cursor:pointer;
-          color:#ccc5b9; display:flex; align-items:center;
-          transition:color .15s;
+          position:absolute; right:.75rem; background:none; border:none;
+          cursor:pointer; color:#ccc5b9; display:flex; align-items:center; transition:color .15s;
         }
         .hts-clear-btn:hover { color:#eb5e28; }
         .hts-library-btn {
@@ -194,22 +275,18 @@ export default function HomeTrackSearch() {
           color:#fffcf2; background:#252422; border:none;
           padding:.85rem 1.75rem; cursor:pointer; white-space:nowrap;
           display:inline-flex; align-items:center; gap:.5rem;
-          transition:background .2s;
-          text-decoration:none;
+          transition:background .2s; text-decoration:none;
         }
         .hts-library-btn:hover { background:#eb5e28; }
 
-        /* ── Track list ── */
         .hts-list { border:1px solid #ccc5b9; border-bottom:none; }
-
         .hts-row {
           display:grid;
-          grid-template-columns: 44px 400px 1fr auto auto;
+          grid-template-columns: 44px 1.8fr 1fr auto auto auto;
           gap:.75rem 1rem;
           padding:.8rem 1.25rem;
           border-bottom:1px solid #ccc5b9;
-          align-items:center;
-          position:relative; cursor:pointer;
+          align-items:center; position:relative; cursor:pointer;
           transition:background .15s;
         }
         .hts-row:hover { background:#f9f6ef; }
@@ -220,19 +297,15 @@ export default function HomeTrackSearch() {
           transform:scaleY(0); transform-origin:top;
           transition:transform .25s cubic-bezier(.16,1,.3,1);
         }
-        .hts-row:hover::before,
-        .hts-row.playing::before { transform:scaleY(1); }
+        .hts-row:hover::before, .hts-row.playing::before { transform:scaleY(1); }
 
-        /* Cover thumb */
         .hts-thumb {
           width:44px; height:44px; flex-shrink:0;
-          overflow:hidden; background:#252422;
-          position:relative; cursor:pointer;
+          overflow:hidden; background:#252422; position:relative; cursor:pointer;
         }
         .hts-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
         .hts-thumb-ph {
-          width:100%; height:100%; display:flex;
-          align-items:center; justify-content:center;
+          width:100%; height:100%; display:flex; align-items:center; justify-content:center;
           font-family:'Manrope',sans-serif; font-size:.45rem;
           color:rgba(255,252,242,.2); letter-spacing:.1em;
         }
@@ -241,28 +314,23 @@ export default function HomeTrackSearch() {
           display:flex; align-items:center; justify-content:center;
           opacity:0; transition:opacity .2s;
         }
-        .hts-row:hover .hts-thumb-overlay,
-        .hts-row.playing .hts-thumb-overlay { opacity:1; }
+        .hts-row:hover .hts-thumb-overlay, .hts-row.playing .hts-thumb-overlay { opacity:1; }
 
-        /* Meta */
         .hts-meta { min-width:0; }
         .hts-track-title {
           font-family:'Syne',sans-serif; font-weight:700;
           font-size:.8rem; letter-spacing:-.01em; text-transform:uppercase;
           color:#252422; line-height:1.1;
-          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-          transition:color .15s;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .15s;
         }
-        .hts-row:hover .hts-track-title,
-        .hts-row.playing .hts-track-title { color:#eb5e28; }
+        .hts-row:hover .hts-track-title, .hts-row.playing .hts-track-title { color:#eb5e28; }
         .hts-track-sub {
           font-family:'Manrope',sans-serif; font-size:.65rem;
           color:#403d39; opacity:.45; margin-top:.15rem;
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
         }
 
-        /* Tags */
-        .hts-tags { display:flex; gap:.3rem; overflow:hidden; }
+        .hts-tags { display:flex; gap:.3rem; overflow:hidden; min-width:0; }
         .hts-tag {
           font-family:'Manrope',sans-serif; font-size:.52rem; font-weight:600;
           letter-spacing:.1em; text-transform:uppercase;
@@ -270,13 +338,22 @@ export default function HomeTrackSearch() {
           padding:.2rem .45rem; line-height:1; white-space:nowrap;
         }
 
-        /* Duration */
         .hts-dur {
           font-family:'Manrope',sans-serif; font-size:.65rem; font-weight:500;
           color:#403d39; opacity:.35; white-space:nowrap;
         }
 
-        /* Actions */
+        /* Share button */
+        .hts-share-btn {
+          width:30px; height:30px; background:none;
+          border:1px solid #ccc5b9; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          color:#403d39; flex-shrink:0;
+          transition:border-color .2s,color .2s,background .2s;
+        }
+        .hts-share-btn:hover { border-color:#eb5e28; color:#eb5e28; }
+        .hts-share-btn.copied { border-color:#eb5e28; background:#eb5e28; color:#fffcf2; }
+
         .hts-dl-btn {
           font-family:'Manrope',sans-serif; font-size:.6rem; font-weight:600;
           letter-spacing:.1em; text-transform:uppercase;
@@ -286,27 +363,15 @@ export default function HomeTrackSearch() {
           transition:background .2s; white-space:nowrap;
         }
         .hts-dl-btn:hover { background:#d44c10; border-color:#d44c10; }
-        .hts-signup-btn {
-          font-family:'Manrope',sans-serif; font-size:.6rem; font-weight:600;
-          letter-spacing:.06em; text-transform:uppercase;
-          color:#eb5e28; background:none; border:1px solid #eb5e28;
-          padding:.3rem .65rem; cursor:pointer;
-          display:flex; align-items:center; gap:.3rem;
-          transition:background .2s,color .2s; white-space:nowrap;
-          text-decoration:none;
-        }
-        .hts-signup-btn:hover { background:#eb5e28; color:#fffcf2; }
+        .hts-dl-btn:disabled { opacity:.5; cursor:not-allowed; }
 
-        /* ── Footer row ── */
         .hts-footer {
-          border:1px solid #ccc5b9; border-top:none;
-          padding:1.25rem 1.5rem;
+          border:1px solid #ccc5b9; border-top:none; padding:1.25rem 1.5rem;
           display:flex; align-items:center; justify-content:space-between;
           gap:1rem; flex-wrap:wrap;
         }
         .hts-footer-text {
-          font-family:'Manrope',sans-serif; font-size:.72rem;
-          color:#403d39; opacity:.5;
+          font-family:'Manrope',sans-serif; font-size:.72rem; color:#403d39; opacity:.5;
         }
         .hts-footer-text strong { color:#252422; opacity:1; font-weight:700; }
         .hts-goto-btn {
@@ -319,7 +384,6 @@ export default function HomeTrackSearch() {
         }
         .hts-goto-btn:hover { background:#d44c10; }
 
-        /* ── Loading / empty ── */
         .hts-spinner-wrap {
           display:flex; align-items:center; justify-content:center;
           padding:3rem; border:1px solid #ccc5b9;
@@ -345,21 +409,30 @@ export default function HomeTrackSearch() {
           color:#403d39; opacity:.5; max-width:260px; line-height:1.6;
         }
 
-        /* ── Responsive ── */
+        /* Copied toast */
+        .hts-toast {
+          position:fixed; bottom:5rem; left:50%; transform:translateX(-50%);
+          background:#252422; color:#fffcf2; z-index:9999;
+          font-family:'Manrope',sans-serif; font-size:.72rem; font-weight:600;
+          letter-spacing:.06em; padding:.6rem 1.25rem;
+          border-left:3px solid #eb5e28;
+          animation:hts-toast-in .2s ease;
+        }
+        @keyframes hts-toast-in { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
         @media(max-width:768px) {
           .hts-inner { padding:0 1.25rem; }
-          .hts-row { grid-template-columns: 40px 1fr auto; gap:.5rem .75rem; }
-          .hts-thumb { grid-column:1; grid-row:1/3; width:40px; height:40px; }
-          .hts-meta { grid-column:2; }
-          .hts-tags { grid-column:2; }
-          .hts-dur { display:none; }
-          .hts-dl-btn, .hts-signup-btn { grid-column:3; grid-row:1/3; }
+          .hts-row { grid-template-columns: 40px 1fr auto auto; gap:.5rem .75rem; }
+          .hts-tags, .hts-dur { display:none; }
         }
         @media(max-width:480px) {
           .hts-search-row { flex-direction:column; }
           .hts-library-btn { justify-content:center; }
         }
       `}</style>
+
+      {/* Copied toast */}
+      {copiedId && <div className="hts-toast">Link copied to clipboard</div>}
 
       <section className="hts-root">
         <div className="hts-inner">
@@ -480,15 +553,35 @@ export default function HomeTrackSearch() {
                       {/* Duration */}
                       <span className="hts-dur">{track.duration}</span>
 
-                      {/* Action */}
+                      {/* Share */}
+                      <button
+                        className={`hts-share-btn${copiedId === track.id ? " copied" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShare(track);
+                        }}
+                        aria-label="Share track"
+                        title="Share track"
+                      >
+                        {copiedId === track.id ? (
+                          <Check size={13} />
+                        ) : (
+                          <Share2 size={13} />
+                        )}
+                      </button>
+
+                      {/* Download */}
                       {track.downloadable && (
                         <button
                           className="hts-dl-btn"
                           onClick={(e) => {
                             e.stopPropagation();
+                            handleDownload(track);
                           }}
+                          disabled={downloaded === track.id}
                         >
-                          <Download size={11} /> DL
+                          <Download size={11} />{" "}
+                          {downloaded === track.id ? "✓" : "DOWNLOAD"}
                         </button>
                       )}
                     </div>

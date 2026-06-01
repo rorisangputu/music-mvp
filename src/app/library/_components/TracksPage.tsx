@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import PlayerBar from "./PlayBar";
+import { Share2, Check } from "lucide-react";
 
 interface TracksPageProps {
   isAdmin: boolean | null;
@@ -47,6 +48,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [copiedTrackId, setCopiedTrackId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload cache: store Audio objects keyed by track id so hover-preloads persist
@@ -180,6 +182,24 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
     a.click();
     document.body.removeChild(a);
   };
+  const handleShare = useCallback(async (track: Track) => {
+    const url = `${window.location.origin}/library?search=${encodeURIComponent(track.title)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {}
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: track.title,
+          text: `Check out "${track.title}" by ${track.composer}`,
+          url,
+        });
+      } catch {}
+    }
+    alert("Link copied to clipboard!");
+    setCopiedTrackId(track.id);
+    setTimeout(() => setCopiedTrackId(null), 2000);
+  }, []);
 
   // Sync search input with URL on back/forward nav
   useEffect(() => {
@@ -604,6 +624,16 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
         }
         .tp-popup-signup:hover { background:#eb5e28; }
 
+        .tp-share-btn {
+          width:30px; height:30px; background:none;
+          border:1px solid #ccc5b9; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          color:#403d39; flex-shrink:0;
+          transition:border-color .2s,color .2s,background .2s;
+        }
+        .tp-share-btn:hover { border-color:#eb5e28; color:#eb5e28; }
+        .tp-share-btn.copied { border-color:#eb5e28; background:#eb5e28; color:#fffcf2; }
+
         /* ══ Responsive ══ */
         @media(max-width:1024px) {
           .tp-head { grid-template-columns:1fr; gap:1.5rem; }
@@ -918,10 +948,23 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
                       <span className="tp-row-dur">{track.duration}</span>
 
                       {/* Actions */}
+
                       <div
                         className="tp-row-actions"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <button
+                          className={`tp-share-btn${copiedTrackId === track.id ? " copied" : ""}`}
+                          onClick={() => handleShare(track)}
+                          aria-label="Share track"
+                          title="Share track"
+                        >
+                          {copiedTrackId === track.id ? (
+                            <Check size={12} />
+                          ) : (
+                            <Share2 size={12} />
+                          )}
+                        </button>
                         <button
                           className="tp-info-btn"
                           onClick={() => setSelectedTrack(track)}
@@ -933,7 +976,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
                             className="tp-dl-btn"
                             onClick={() => handleDownload(track)}
                           >
-                            <Download size={11} /> DL
+                            <Download size={11} /> DOWNLOAD
                           </button>
                         )}
                         {!isUser && !isAdmin && (
