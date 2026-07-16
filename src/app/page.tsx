@@ -28,7 +28,7 @@ export default function Home() {
           <HomeTrackSearch />
         </Suspense>
         <NewReleases />
-        <TrendingPlaylist />
+        {/* <TrendingPlaylist /> */}
         <NoSearch />
       </div>
     </div>

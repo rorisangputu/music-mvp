@@ -1,8 +1,6 @@
-// hooks/useTracks.ts
+// lib/useTracks.ts
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import debounce from "lodash.debounce";
 import { Track } from "@/types/music";
 
@@ -15,10 +13,10 @@ type FilterParams = {
 };
 
 const ITEMS_PER_PAGE = 20;
-const CACHE_KEY = "music_lib_tracks_v2";
+const CACHE_KEY = "music_lib_tracks_v3"; // bumped — new data shape from Prisma
 const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes
 
-// ── Cache helpers ────────────────────────────────────────────────────────────
+// ── Cache helpers ─────────────────────────────────────────────────────────────
 
 function readCache(): Track[] | null {
   try {
@@ -42,35 +40,8 @@ function writeCache(tracks: Track[]) {
       JSON.stringify({ tracks, ts: Date.now() }),
     );
   } catch {
-    // sessionStorage quota exceeded — silently skip
+    // quota exceeded — skip silently
   }
-}
-
-// ── Format helpers ────────────────────────────────────────────────────────────
-
-function fmtDuration(raw: unknown): string {
-  if (!raw) return "0:00";
-  if (typeof raw === "object" && raw !== null && "seconds" in raw) {
-    const s = (raw as { seconds: number }).seconds;
-    if (s < 0 || s > 3600) return "0:00";
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  }
-  if (typeof raw === "number") {
-    if (isNaN(raw) || raw < 0) return "0:00";
-    return `${Math.floor(raw / 60)}:${String(raw % 60).padStart(2, "0")}`;
-  }
-  return String(raw);
-}
-
-function fmtDate(raw: unknown): string {
-  if (!raw) return "";
-  if (typeof raw === "object" && raw !== null && "seconds" in raw) {
-    return new Date((raw as { seconds: number }).seconds * 1000)
-      .toISOString()
-      .split("T")[0];
-  }
-  if (typeof raw === "string") return new Date(raw).toISOString().split("T")[0];
-  return "";
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -107,13 +78,21 @@ export const useTracks = () => {
 
   const debouncedUpdateSearch = useMemo(
     () =>
-      debounce((value: string) => {
-        updateURLParams({ search: value, page: "1" });
-      }, 350),
+      debounce(
+        (value: string) => updateURLParams({ search: value, page: "1" }),
+        350,
+      ),
     [updateURLParams],
   );
 
-  // ── Fetch + cache ─────────────────────────────────────────────────────────
+  // ── Fetch from Prisma API route ───────────────────────────────────────────
+
+  const fetchTracks = useCallback(async (): Promise<Track[]> => {
+    const res = await fetch("/api/tracks");
+    if (!res.ok) throw new Error(`Failed to fetch tracks: ${res.status}`);
+    const data = (await res.json()) as { tracks: Track[] };
+    return data.tracks;
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -125,33 +104,12 @@ export const useTracks = () => {
         return;
       }
 
-      // 2. Fetch from Firestore
+      // 2. Fetch from API
       try {
         setLoading(true);
-        const [tracksSnap, albumsSnap] = await Promise.all([
-          getDocs(query(collection(db, "tracks"), orderBy("title", "asc"))),
-          getDocs(collection(db, "albums")),
-        ]);
-
-        const albumCovers = new Map<string, string>();
-        albumsSnap.docs.forEach((d) => {
-          const cover = d.data().coverImage;
-          if (cover) albumCovers.set(d.id, cover);
-        });
-
-        const data: Track[] = tracksSnap.docs.map((d) => {
-          const dd = d.data();
-          return {
-            id: d.id,
-            ...dd,
-            duration: fmtDuration(dd.duration),
-            createdAt: fmtDate(dd.createdAt),
-            coverImage: albumCovers.get(dd.albumId) ?? undefined,
-          } as Track;
-        });
-
-        writeCache(data);
-        setAllTracks(data);
+        const tracks = await fetchTracks();
+        writeCache(tracks);
+        setAllTracks(tracks);
       } catch (err) {
         console.error("useTracks fetch error:", err);
         setError("Failed to load tracks. Please try again.");
@@ -161,7 +119,7 @@ export const useTracks = () => {
     };
 
     load();
-  }, []);
+  }, [fetchTracks]);
 
   // ── Filtering ─────────────────────────────────────────────────────────────
 
@@ -210,13 +168,12 @@ export const useTracks = () => {
     startIndex + ITEMS_PER_PAGE,
   );
 
-  // ── Derived lists for filter dropdowns ────────────────────────────────────
+  // ── Derived mood list for filter dropdown ─────────────────────────────────
 
   const availableMoods = useMemo(() => {
     const set = new Set<string>();
     allTracks.forEach((t) => {
-      if (Array.isArray(t.mood)) t.mood.forEach((m) => set.add(m));
-      else if (t.mood) set.add(t.mood);
+      (Array.isArray(t.mood) ? t.mood : []).forEach((m) => set.add(m));
     });
     return Array.from(set).sort();
   }, [allTracks]);
@@ -224,91 +181,56 @@ export const useTracks = () => {
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSearchChange = useCallback(
-    (value: string) => debouncedUpdateSearch(value),
+    (v: string) => debouncedUpdateSearch(v),
     [debouncedUpdateSearch],
   );
-
   const handleCategoryChange = useCallback(
     (category: string) => updateURLParams({ category, page: "1" }),
     [updateURLParams],
   );
-
   const handleGenreChange = useCallback(
     (genre: string) => updateURLParams({ genre, page: "1" }),
     [updateURLParams],
   );
-
   const handleMoodChange = useCallback(
     (mood: string) => updateURLParams({ mood, page: "1" }),
     [updateURLParams],
   );
-
   const handlePageChange = useCallback(
     (page: number) => updateURLParams({ page: page.toString() }),
     [updateURLParams],
   );
-
   const clearFilters = useCallback(() => router.push("/library"), [router]);
 
-  /** Force a fresh fetch (e.g. after an admin upload) */
+  /** Force a fresh fetch — call this after uploading a new album */
   const invalidateCache = useCallback(async () => {
     sessionStorage.removeItem(CACHE_KEY);
     setLoading(true);
     try {
-      const [tracksSnap, albumsSnap] = await Promise.all([
-        getDocs(query(collection(db, "tracks"), orderBy("title", "asc"))),
-        getDocs(collection(db, "albums")),
-      ]);
-
-      const albumCovers = new Map<string, string>();
-      albumsSnap.docs.forEach((d) => {
-        const cover = d.data().coverImage;
-        if (cover) albumCovers.set(d.id, cover);
-      });
-
-      const data: Track[] = tracksSnap.docs.map((d) => {
-        const dd = d.data();
-        return {
-          id: d.id,
-          ...dd,
-          duration: fmtDuration(dd.duration),
-          createdAt: fmtDate(dd.createdAt),
-          coverImage: albumCovers.get(dd.albumId) ?? undefined,
-        } as Track;
-      });
-
-      writeCache(data);
-      setAllTracks(data);
+      const tracks = await fetchTracks();
+      writeCache(tracks);
+      setAllTracks(tracks);
     } catch (err) {
       console.error("invalidateCache error:", err);
       setError("Failed to refresh tracks.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchTracks]);
 
   return {
-    // Data
     tracks: paginatedTracks,
     loading,
     error,
-
-    // Filters
     search,
     categoryFilter,
     genreFilter,
     moodFilter,
-
-    // Pagination
     currentPage: safePage,
     totalPages,
     totalItems: filteredTracks.length,
     itemsPerPage: ITEMS_PER_PAGE,
-
-    // Dropdown options
     availableMoods,
-
-    // Handlers
     handleSearchChange,
     handleCategoryChange,
     handleGenreChange,

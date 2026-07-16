@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +10,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth required models
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  PREMIUM
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum TrackVersion {
+  FULL_MIX
+  UNDERSCORE
+  STEMS
+  EDIT_60
+  EDIT_30
+  STING
+  LOOP
+}
+
+enum Energy {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum LicenseTier {
+  FREE
+  STANDARD
+  PREMIUM
+  EXCLUSIVE
+}
+
+enum VocalType {
+  NONE
+  MALE
+  FEMALE
+  CHOIR
+  SPOKEN_WORD
+  CHANT
+  AD_LIBS_ONLY
+}
+
+// ── NextAuth ──────────────────────────────────────────────────────────────────
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -39,6 +85,16 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model VerificationToken {
+  identifier String   @unique
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── User ──────────────────────────────────────────────────────────────────────
+
 model User {
   id                      String    @id @default(cuid())
   name                    String
@@ -51,14 +107,11 @@ model User {
   verificationCode        String?
   verificationCodeExpires DateTime?
   image                   String?
-
-  // Radio station fields
-  signInToken    String? @unique // Unique permanent token for radio stations
-  isRadioStation Boolean @default(false) // Flag to identify radio stations
-
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  signInToken             String?   @unique
+  isRadioStation          Boolean   @default(false)
+  role                    UserRole  @default(USER)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   accounts     Account[]
   sessions     Session[]
@@ -66,6 +119,8 @@ model User {
   downloads    Download[]
   loginHistory LoginHistory[]
 }
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
 
 model Admin {
   id                      String    @id @default(cuid())
@@ -81,37 +136,153 @@ model Admin {
   updatedAt               DateTime  @updatedAt
 }
 
+model LoginHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  loginMethod String
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Music ─────────────────────────────────────────────────────────────────────
+
+model Album {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  genre       String
+  composer    String
+  coverImage  String
+  releaseDate String?
+  mood        String[]
+  cueSheet    String?
+  featured    Boolean  @default(false)
+  trackCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tracks Track[]
+}
+
+model Track {
+  id          String @id @default(cuid())
+
+  // Identity
+  title              String
+  composer           String
+  trackNumber        Int
+  duration           Int          // stored in seconds — e.g. 183 for 3:03
+  version            TrackVersion @default(FULL_MIX)
+  isrc               String?
+  releaseDate        String?
+  parentTrackId      String?      // reference to full mix if this is an edit or stem
+
+  // Genre, mood & energy
+  genre              String
+  subGenre           String?
+  mood               String[]
+  energy             Energy       @default(MEDIUM)
+  bpm                Int
+  musicalKey         String?
+
+  // Instrumentation
+  instruments        String[]
+  vocals             VocalType    @default(NONE)
+  vocalLanguage      String?
+  featuredInstrument String?
+
+  // Usage & licensing
+  category           String
+  usageTags          String[]
+  downloadable       Boolean      @default(false)
+  licenseTier        LicenseTier  @default(FREE)
+  exclusive          Boolean      @default(false)
+  cueSheetUrl        String?
+
+  // Audio & files (Bunny.net URLs)
+  audioUrl           String
+  previewUrl         String?      // watermarked 30-sec clip for guests
+  waveformUrl        String?      // pre-generated waveform PNG for the player
+  format             String?      // MP3 · WAV · FLAC
+  fileSize           Int?         // bytes
+  bitrate            Int?         // kbps
+
+  // Analytics — incremented server-side, never set manually
+  playCount          Int          @default(0)
+  downloadCount      Int          @default(0)
+
+  // Admin flags
+  featured           Boolean      @default(false)
+  newRelease         Boolean      @default(false)
+  tags               String[]     // free-form keywords for edge cases
+
+  // Timestamps
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Relations
+  albumId            String
+  album              Album        @relation(fields: [albumId], references: [id])
+  downloads          Download[]
+  favourites         Favourite[]
+
+  // Indexes — these are the fields your filters will hit most
+  @@index([albumId])
+  @@index([genre])
+  @@index([energy])
+  @@index([bpm])
+  @@index([featured])
+  @@index([newRelease])
+  @@index([downloadable])
+  @@index([category])
+}
+
+// ── Playlist ──────────────────────────────────────────────────────────────────
+
+model Playlist {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  coverImage  String?
+  coverColor  String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tracks PlaylistTrack[]
+}
+
+// Join table — replaces the old trackIds String[] array
+// Gives you ordering and lets you query playlist tracks properly
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  trackId    String
+  position   Int      // order of the track within the playlist
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+}
+
+// ── User activity ─────────────────────────────────────────────────────────────
+
 model Favourite {
   id        String   @id @default(cuid())
   userId    String
   trackId   String
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([userId, trackId])
-}
-
-model Track {
-  id            String @id
-  title         String
-  audio_url     String
-  play_count    Int
-  downloadCount Int    @default(0)
-
-  downloads Download[]
-}
-
-model Playlist {
-  id               String   @id // Use playlist config IDs
-  name             String
-  description      String
-  coverColor       String
-  trackIds         String[] // Firebase track IDs
-  targetGenres     String[] // For reference
-  targetCategories String[] // For reference
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 }
 
 model Download {
@@ -124,33 +295,4 @@ model Download {
   track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([userId, trackId])
-}
-
-model LoginHistory {
-  id          String   @id @default(cuid())
-  userId      String
-  loginMethod String // "token", "credentials", "google"
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String   @unique
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-enum UserRole {
-  USER
-  PREMIUM
-}
-
-enum AdminRole {
-  ADMIN
-  SUPER_ADMIN
 }
