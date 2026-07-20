@@ -6,27 +6,25 @@ export async function GET() {
   try {
     const playlists = await db.playlist.findMany({
       select: {
-        id: true,
-        name: true,
+        id:          true,
+        name:        true,
         description: true,
-        coverColor: true,
-        trackIds: true,
-      }
+        coverColor:  true,
+        _count: {
+          select: { tracks: true },
+        },
+      },
     });
 
-    // Add track count to each playlist
-    const playlistsWithCount = playlists.map(playlist => ({
-      id: playlist.id,
-      name: playlist.name,
-      description: playlist.description,
-      coverColor: playlist.coverColor,
-      trackCount: playlist.trackIds.length
+    const formatted = playlists.map((p) => ({
+      id:          p.id,
+      name:        p.name,
+      description: p.description,
+      coverColor:  p.coverColor,
+      trackCount:  p._count.tracks,
     }));
 
-    return NextResponse.json({ 
-      success: true,
-      playlists: playlistsWithCount 
-    });
+    return NextResponse.json({ success: true, playlists: formatted });
 
   } catch (error) {
     console.error("Error fetching playlists:", error);

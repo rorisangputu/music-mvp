@@ -1,35 +1,35 @@
+// app/api/tracks/play/route.ts
 import db from "@/db/db";
 import { NextResponse } from "next/server";
 
-
 export async function POST(req: Request) {
   try {
-    const { trackId, title, url  } = await req.json();
+    const { trackId } = await req.json() as { trackId: string };
 
-    const track = await db.track.findUnique({
-        where: {id: trackId}
-    })
-
-    if(!track){
-        await db.track.create({
-            data: {
-              id: trackId,
-              title: title,
-              audio_url: url,
-              play_count: 1,
-              downloadCount: 0,
-            }
-        })
-    }else{
-        await db.track.update({
-            where: { id: trackId },
-            data: { play_count: { increment: 1 } },
-        });
+    if (!trackId) {
+      return NextResponse.json({ error: "trackId is required" }, { status: 400 });
     }
 
-    return NextResponse.json(track);
+    const track = await db.track.findUnique({
+      where: { id: trackId },
+    });
+
+    if (!track) {
+      return NextResponse.json({ error: "Track not found" }, { status: 404 });
+    }
+
+    await db.track.update({
+      where: { id: trackId },
+      data:  { playCount: { increment: 1 } },
+    });
+
+    return NextResponse.json({ success: true });
+
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Track not found or update failed" }, { status: 400 });
+    console.error("play route error:", error);
+    return NextResponse.json(
+      { error: "Failed to record play" },
+      { status: 500 }
+    );
   }
 }
