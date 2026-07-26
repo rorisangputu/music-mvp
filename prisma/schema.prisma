@@ -56,6 +56,12 @@ enum VocalType {
   AD_LIBS_ONLY
 }
 
+enum DownloadFormat {
+  MP3
+  WAV
+  AIFF
+}
+
 // ── NextAuth ──────────────────────────────────────────────────────────────────
 
 model Account {
@@ -169,66 +175,63 @@ model Album {
 }
 
 model Track {
-  id          String @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identity
-  title              String
-  composer           String
-  trackNumber        Int
-  duration           Int          // stored in seconds — e.g. 183 for 3:03
-  version            TrackVersion @default(FULL_MIX)
-  isrc               String?
-  releaseDate        String?
-  parentTrackId      String?      // reference to full mix if this is an edit or stem
+  title         String
+  composer      String
+  trackNumber   Int
+  duration      Int // stored in seconds — e.g. 183 for 3:03
+  version       TrackVersion @default(FULL_MIX)
+  isrc          String?
+  releaseDate   String?
+  parentTrackId String? // reference to full mix if this is an edit or stem
 
   // Genre, mood & energy
-  genre              String
-  subGenre           String?
-  mood               String[]
-  energy             Energy       @default(MEDIUM)
-  bpm                Int
-  musicalKey         String?
+  genre      String
+  subGenre   String?
+  mood       String[]
+  energy     Energy   @default(MEDIUM)
+  bpm        Int
+  musicalKey String?
 
   // Instrumentation
   instruments        String[]
-  vocals             VocalType    @default(NONE)
+  vocals             VocalType @default(NONE)
   vocalLanguage      String?
   featuredInstrument String?
 
   // Usage & licensing
-  category           String
-  usageTags          String[]
-  downloadable       Boolean      @default(false)
-  licenseTier        LicenseTier  @default(FREE)
-  exclusive          Boolean      @default(false)
-  cueSheetUrl        String?
+  category     String
+  usageTags    String[]
+  downloadable Boolean     @default(false)
+  licenseTier  LicenseTier @default(FREE)
+  exclusive    Boolean     @default(false)
+  cueSheetUrl  String?
 
   // Audio & files (Bunny.net URLs)
-  audioUrl           String
-  previewUrl         String?      // watermarked 30-sec clip for guests
-  waveformUrl        String?      // pre-generated waveform PNG for the player
-  format             String?      // MP3 · WAV · FLAC
-  fileSize           Int?         // bytes
-  bitrate            Int?         // kbps
+  audioUrl    String? // watermarked 30-sec clip for guests
+  waveformUrl String? // pre-generated waveform PNG for the player
 
   // Analytics — incremented server-side, never set manually
-  playCount          Int          @default(0)
-  downloadCount      Int          @default(0)
+  playCount     Int @default(0)
+  downloadCount Int @default(0)
 
   // Admin flags
-  featured           Boolean      @default(false)
-  newRelease         Boolean      @default(false)
-  tags               String[]     // free-form keywords for edge cases
+  featured   Boolean  @default(false)
+  newRelease Boolean  @default(false)
+  tags       String[] // free-form keywords for edge cases
 
   // Timestamps
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  albumId            String
-  album              Album        @relation(fields: [albumId], references: [id])
-  downloads          Download[]
-  favourites         Favourite[]
+  albumId        String
+  album          Album           @relation(fields: [albumId], references: [id])
+  downloads      Download[]
+  favourites     Favourite[]
+  trackDownloads TrackDownload[]
 
   // Indexes — these are the fields your filters will hit most
   @@index([albumId])
@@ -239,6 +242,23 @@ model Track {
   @@index([newRelease])
   @@index([downloadable])
   @@index([category])
+}
+
+model TrackDownload {
+  id      String         @id @default(cuid())
+  trackId String
+  format  DownloadFormat
+  url     String
+
+  fileSize Int?
+  bitrate  Int?
+
+  createdAt DateTime @default(now())
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, format])
+  @@index([trackId])
 }
 
 // ── Playlist ──────────────────────────────────────────────────────────────────
@@ -262,7 +282,7 @@ model PlaylistTrack {
   id         String   @id @default(cuid())
   playlistId String
   trackId    String
-  position   Int      // order of the track within the playlist
+  position   Int // order of the track within the playlist
   createdAt  DateTime @default(now())
 
   playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)

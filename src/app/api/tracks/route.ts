@@ -14,6 +14,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // console.log(tracks)
+
     // Format duration from seconds to "3:03" and join coverImage from album
     const formatted = tracks.map((t) => ({
       id:                t.id,
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
       // Joined from album
       coverImage:        t.album?.coverImage ?? null,
     }));
-
+    console.log(formatted)
     return NextResponse.json({ tracks: formatted });
 
   } catch (err) {

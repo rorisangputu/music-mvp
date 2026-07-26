@@ -53,7 +53,8 @@ export type AlbumUploadInput = {
 
 export async function uploadFileToBunny(
   file: File,
-  folder: "tracks" | "covers" | "cueSheets",
+  folder: "tracks" | "covers" | "cueSheets" | "wav" | "aiff",
+  albumFolder: string,
   onProgress?: (pct: number) => void
 ): Promise<string> {
   // Report start
@@ -62,6 +63,7 @@ export async function uploadFileToBunny(
   const formData = new FormData();
   formData.append("file", file);
   formData.append("folder", folder);
+  formData.append("albumFolder", albumFolder);
 
   const res = await fetch("/api/admin/bunny/upload", {
     method: "POST",
@@ -141,7 +143,11 @@ export async function uploadAlbum(
 
   // ── Step 1: Upload cover image ──────────────────────────────────────────
   console.log("Uploading cover image...");
-  const coverImageUrl = await uploadFileToBunny(coverImageFile, "covers");
+ const coverImageUrl = await uploadFileToBunny(
+  coverImageFile,
+  "covers",
+  albumData.title
+);
   console.log("Cover image uploaded:", coverImageUrl);
 
   // ── Step 2: Upload cue sheet if provided ───────────────────────────────
@@ -151,7 +157,11 @@ export async function uploadAlbum(
       throw new Error("Cue sheet must be a PDF file");
     }
     console.log("Uploading cue sheet...");
-    cueSheetUrl = await uploadFileToBunny(cueSheetFile, "cueSheets");
+    const cueSheetUrl = await uploadFileToBunny(
+      cueSheetFile,
+      "cueSheets",
+      albumData.title
+    );
     console.log("Cue sheet uploaded:", cueSheetUrl);
   }
 
@@ -168,6 +178,7 @@ export async function uploadAlbum(
         const audioUrl = await uploadFileToBunny(
           input.file,
           "tracks",
+          albumData.title,
           (pct) => {
             progressArray[i].progress = pct;
             notify();

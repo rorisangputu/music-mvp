@@ -12,7 +12,14 @@ if (!BUNNY_STORAGE_ZONE || !BUNNY_STORAGE_PASSWORD || !BUNNY_CDN_HOSTNAME) {
     "Missing Bunny.net env vars. Set BUNNY_STORAGE_ZONE, BUNNY_STORAGE_PASSWORD, and BUNNY_CDN_HOSTNAME in .env.local"
   );
 }
+export const config = {
+  api: {
+    bodyParser: false,
+    responseLimit: false,
+  },
+};
 
+export const maxDuration = 300;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function sanitiseFilename(name: string): string {
@@ -51,7 +58,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file     = formData.get("file") as File | null;
     const folder   = (formData.get("folder") as string) ?? "tracks"; // tracks | covers | cueSheets
-
+    const albumFolder = (formData.get("albumFolder") as string) ?? "uncategorized";
+    
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
@@ -59,25 +67,27 @@ export async function POST(req: NextRequest) {
     // Build a unique filename — {timestamp}-{sanitised-original-name}
     const timestamp     = Date.now();
     const safeName      = sanitiseFilename(file.name);
+    const safeAlbumFolder = sanitiseFilename(albumFolder);
     const uniqueName    = `${timestamp}-${safeName}`;
-    const uploadPath    = `${folder}/${uniqueName}`;
+    const uploadPath = `${folder}/${safeAlbumFolder}/${uniqueName}`;
     const contentType   = getContentType(file.name);
 
     // Convert File → ArrayBuffer → Buffer for streaming to Bunny
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer      = Buffer.from(arrayBuffer);
+    
 
     const uploadUrl = `${BUNNY_STORAGE_ENDPOINT}/${BUNNY_STORAGE_ZONE}/${uploadPath}`;
 
-    const bunnyRes = await fetch(uploadUrl, {
-      method:  "PUT",
-      headers: {
-        AccessKey:       BUNNY_STORAGE_PASSWORD,
-        "Content-Type":  contentType,
-        "Content-Length": buffer.byteLength.toString(),
-      },
-      body: buffer,
-    });
+   const bunnyRes = await fetch(uploadUrl, {
+    method:  "PUT",
+    headers: {
+      AccessKey:        BUNNY_STORAGE_PASSWORD,
+      "Content-Type":   contentType,
+      
+    },
+    body: file.stream() as unknown as BodyInit,
+    // @ts-ignore
+    duplex: "half",
+  });
 
     if (!bunnyRes.ok) {
       const errText = await bunnyRes.text();
@@ -96,7 +106,7 @@ export async function POST(req: NextRequest) {
       url:      cdnUrl,
       filename: uniqueName,
       folder,
-      size:     buffer.byteLength,
+      size:     file.size
     });
 
   } catch (err) {

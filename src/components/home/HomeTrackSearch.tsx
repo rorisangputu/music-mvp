@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { Track } from "@/types/music";
 import { useRouter, useSearchParams } from "next/navigation";
+import PlayerBar from "../playbar";
 
 const PREVIEW_COUNT = 6;
-const CACHE_KEY = "music_lib_tracks_v2";
+const CACHE_KEY = "music_lib_tracks_v3";
 
 export default function HomeTrackSearch() {
   const router = useRouter();
@@ -31,59 +32,44 @@ export default function HomeTrackSearch() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preloadCache = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // ── Load from sessionStorage cache ───────────────────────────────────────
+  // ── Load ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { tracks } = JSON.parse(raw) as { tracks: Track[]; ts: number };
-        setAllTracks(tracks);
-        setLoading(false);
-        return;
-      }
-    } catch {}
+    const load = async () => {
+      // 1. Try cache first
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const { tracks } = JSON.parse(raw) as { tracks: Track[]; ts: number };
+          setAllTracks(tracks);
+          setLoading(false);
+          return;
+        }
+      } catch {}
 
-    import("@/lib/firebase").then(({ db }) => {
-      import("firebase/firestore").then(
-        async ({ collection, getDocs, orderBy, query: fsQuery }) => {
-          try {
-            const [tracksSnap, albumsSnap] = await Promise.all([
-              getDocs(
-                fsQuery(collection(db, "tracks"), orderBy("title", "asc")),
-              ),
-              getDocs(collection(db, "albums")),
-            ]);
-            const albumCovers = new Map<string, string>();
-            albumsSnap.docs.forEach((d) => {
-              const cover = d.data().coverImage;
-              if (cover) albumCovers.set(d.id, cover);
-            });
-            const data = tracksSnap.docs.map((d) => {
-              const dd = d.data();
-              return {
-                id: d.id,
-                ...dd,
-                coverImage: albumCovers.get(dd.albumId) ?? undefined,
-              } as Track;
-            });
-            try {
-              sessionStorage.setItem(
-                CACHE_KEY,
-                JSON.stringify({ tracks: data, ts: Date.now() }),
-              );
-            } catch {}
-            setAllTracks(data);
-          } catch (e) {
-            console.error("HomeTrackSearch fetch error:", e);
-          } finally {
-            setLoading(false);
-          }
-        },
-      );
-    });
+      // 2. Fetch from API — single res.json() call
+      try {
+        const res = await fetch("/api/tracks");
+        if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+        const data = (await res.json()) as { tracks: Track[] };
+        setAllTracks(data.tracks ?? []);
+        try {
+          sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ tracks: data.tracks, ts: Date.now() }),
+          );
+        } catch {}
+      } catch (err) {
+        console.error("HomeTrackSearch fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
-  // ── Sync query → URL (shallow, no navigation) ────────────────────────────
+  // console.log(allTracks);
+  // ── Sync query → URL ──────────────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     if (query.trim()) params.set("q", query.trim());
@@ -92,13 +78,12 @@ export default function HomeTrackSearch() {
     window.history.replaceState(null, "", newUrl);
   }, [query, searchParams]);
 
-  // ── Sync URL → query on mount (handles shared links) ─────────────────────
   useEffect(() => {
     const q = searchParams.get("q");
     if (q) setQuery(q);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Filter ───────────────────────────────────────────────────────────────
+  // ── Filter ────────────────────────────────────────────────────────────────
   const filtered = query.trim()
     ? allTracks.filter((t) => {
         const q = query.toLowerCase();
@@ -132,19 +117,44 @@ export default function HomeTrackSearch() {
   }, []);
 
   const togglePlay = useCallback(
-    (track: Track) => {
-      if (playingId === track.id) {
-        stopAudio();
+    async (track: Track) => {
+      // Same track -> toggle pause/play
+      if (audioRef.current && playingId === track.id) {
+        if (audioRef.current.paused) {
+          try {
+            await audioRef.current.play();
+            setIsPlaying(true);
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
         return;
       }
-      audioRef.current?.pause();
+
+      // Stop previous audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
       const audio =
         preloadCache.current.get(track.id) ?? new Audio(track.audioUrl);
+
       audioRef.current = audio;
       setPlayingId(track.id);
-      setIsPlaying(true);
-      audio.play().catch(() => stopAudio());
-      audio.onended = () => stopAudio();
+
+      audio.onended = stopAudio;
+
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (err) {
+        console.error(err);
+        stopAudio();
+      }
     },
     [playingId, stopAudio],
   );
@@ -152,14 +162,10 @@ export default function HomeTrackSearch() {
   // ── Share ─────────────────────────────────────────────────────────────────
   const handleShare = useCallback(async (track: Track) => {
     const url = `${window.location.origin}/library?search=${encodeURIComponent(track.title)}`;
-
-    // Always copy to clipboard first so it's available regardless
     try {
       await navigator.clipboard.writeText(url);
       alert("Link copied to clipboard!");
     } catch {}
-
-    // Then also open native share sheet if available (mobile)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -169,7 +175,6 @@ export default function HomeTrackSearch() {
         });
       } catch {}
     }
-
     setCopiedId(track.id);
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
@@ -251,8 +256,7 @@ export default function HomeTrackSearch() {
 
         .hts-search-row { display:flex; gap:.75rem; align-items:stretch; margin-bottom:2rem; }
         .hts-search-wrap {
-          position:relative; flex:1;
-          border:1px solid #ccc5b9; background:#fffcf2;
+          position:relative; flex:1; border:1px solid #ccc5b9; background:#fffcf2;
           display:flex; align-items:center;
         }
         .hts-search-wrap:focus-within { border-color:#eb5e28; }
@@ -281,13 +285,9 @@ export default function HomeTrackSearch() {
 
         .hts-list { border:1px solid #ccc5b9; border-bottom:none; }
         .hts-row {
-          display:grid;
-          grid-template-columns: 44px 1.8fr 1fr auto auto auto;
-          gap:.75rem 1rem;
-          padding:.8rem 1.25rem;
-          border-bottom:1px solid #ccc5b9;
-          align-items:center; position:relative; cursor:pointer;
-          transition:background .15s;
+          display:grid; grid-template-columns: 44px 1.8fr 1fr auto auto auto;
+          gap:.75rem 1rem; padding:.8rem 1.25rem; border-bottom:1px solid #ccc5b9;
+          align-items:center; position:relative; cursor:pointer; transition:background .15s;
         }
         .hts-row:hover { background:#f9f6ef; }
         .hts-row.playing { background:#fff5f0; }
@@ -337,23 +337,17 @@ export default function HomeTrackSearch() {
           color:#403d39; border:1px solid #ccc5b9;
           padding:.2rem .45rem; line-height:1; white-space:nowrap;
         }
-
         .hts-dur {
           font-family:'Manrope',sans-serif; font-size:.65rem; font-weight:500;
           color:#403d39; opacity:.35; white-space:nowrap;
         }
-
-        /* Share button */
         .hts-share-btn {
-          width:30px; height:30px; background:none;
-          border:1px solid #ccc5b9; cursor:pointer;
-          display:flex; align-items:center; justify-content:center;
-          color:#403d39; flex-shrink:0;
+          width:30px; height:30px; background:none; border:1px solid #ccc5b9; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; color:#403d39; flex-shrink:0;
           transition:border-color .2s,color .2s,background .2s;
         }
         .hts-share-btn:hover { border-color:#eb5e28; color:#eb5e28; }
         .hts-share-btn.copied { border-color:#eb5e28; background:#eb5e28; color:#fffcf2; }
-
         .hts-dl-btn {
           font-family:'Manrope',sans-serif; font-size:.6rem; font-weight:600;
           letter-spacing:.1em; text-transform:uppercase;
@@ -364,62 +358,39 @@ export default function HomeTrackSearch() {
         }
         .hts-dl-btn:hover { background:#d44c10; border-color:#d44c10; }
         .hts-dl-btn:disabled { opacity:.5; cursor:not-allowed; }
-
         .hts-footer {
           border:1px solid #ccc5b9; border-top:none; padding:1.25rem 1.5rem;
-          display:flex; align-items:center; justify-content:space-between;
-          gap:1rem; flex-wrap:wrap;
+          display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
         }
-        .hts-footer-text {
-          font-family:'Manrope',sans-serif; font-size:.72rem; color:#403d39; opacity:.5;
-        }
+        .hts-footer-text { font-family:'Manrope',sans-serif; font-size:.72rem; color:#403d39; opacity:.5; }
         .hts-footer-text strong { color:#252422; opacity:1; font-weight:700; }
         .hts-goto-btn {
           font-family:'Syne',sans-serif; font-weight:700;
           font-size:.65rem; letter-spacing:.1em; text-transform:uppercase;
-          color:#fffcf2; background:#eb5e28; border:none;
-          padding:.75rem 1.5rem; cursor:pointer;
-          display:inline-flex; align-items:center; gap:.5rem;
-          transition:background .2s; text-decoration:none;
+          color:#fffcf2; background:#eb5e28; border:none; padding:.75rem 1.5rem; cursor:pointer;
+          display:inline-flex; align-items:center; gap:.5rem; transition:background .2s; text-decoration:none;
         }
         .hts-goto-btn:hover { background:#d44c10; }
-
-        .hts-spinner-wrap {
-          display:flex; align-items:center; justify-content:center;
-          padding:3rem; border:1px solid #ccc5b9;
-        }
+        .hts-spinner-wrap { display:flex; align-items:center; justify-content:center; padding:3rem; border:1px solid #ccc5b9; }
         .hts-spinner {
-          width:28px; height:28px;
-          border:2px solid rgba(235,94,40,.15);
-          border-top-color:#eb5e28; border-radius:50%;
-          animation:hts-spin .8s linear infinite;
+          width:28px; height:28px; border:2px solid rgba(235,94,40,.15);
+          border-top-color:#eb5e28; border-radius:50%; animation:hts-spin .8s linear infinite;
         }
         @keyframes hts-spin { to { transform:rotate(360deg); } }
-
         .hts-empty {
           border:1px solid #ccc5b9; padding:3rem 2rem;
           display:flex; flex-direction:column; align-items:center; gap:.75rem; text-align:center;
         }
-        .hts-empty-title {
-          font-family:'Syne',sans-serif; font-weight:700;
-          font-size:.9rem; text-transform:uppercase; color:#252422;
-        }
-        .hts-empty-desc {
-          font-family:'Manrope',sans-serif; font-size:.75rem;
-          color:#403d39; opacity:.5; max-width:260px; line-height:1.6;
-        }
-
-        /* Copied toast */
+        .hts-empty-title { font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; text-transform:uppercase; color:#252422; }
+        .hts-empty-desc { font-family:'Manrope',sans-serif; font-size:.75rem; color:#403d39; opacity:.5; max-width:260px; line-height:1.6; }
         .hts-toast {
           position:fixed; bottom:5rem; left:50%; transform:translateX(-50%);
           background:#252422; color:#fffcf2; z-index:9999;
           font-family:'Manrope',sans-serif; font-size:.72rem; font-weight:600;
-          letter-spacing:.06em; padding:.6rem 1.25rem;
-          border-left:3px solid #eb5e28;
+          letter-spacing:.06em; padding:.6rem 1.25rem; border-left:3px solid #eb5e28;
           animation:hts-toast-in .2s ease;
         }
         @keyframes hts-toast-in { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-
         @media(max-width:768px) {
           .hts-inner { padding:0 1.25rem; }
           .hts-row { grid-template-columns: 40px 1fr auto auto; gap:.5rem .75rem; }
@@ -431,12 +402,10 @@ export default function HomeTrackSearch() {
         }
       `}</style>
 
-      {/* Copied toast */}
       {copiedId && <div className="hts-toast">Link copied to clipboard</div>}
 
       <section className="hts-root">
         <div className="hts-inner">
-          {/* Header */}
           <div className="hts-head">
             <div className="hts-eyebrow">
               <span className="hts-eyebrow-line" />
@@ -447,7 +416,6 @@ export default function HomeTrackSearch() {
             </h2>
           </div>
 
-          {/* Search + library button */}
           <div className="hts-search-row">
             <div className="hts-search-wrap">
               <Search size={14} />
@@ -473,7 +441,6 @@ export default function HomeTrackSearch() {
             </button>
           </div>
 
-          {/* Track list */}
           {loading ? (
             <div className="hts-spinner-wrap">
               <div className="hts-spinner" />
@@ -498,14 +465,12 @@ export default function HomeTrackSearch() {
                     : track.mood
                       ? [track.mood]
                       : [];
-
                   return (
                     <div
                       key={track.id}
                       className={`hts-row${isActive ? " playing" : ""}`}
                       onMouseEnter={() => handleHover(track)}
                     >
-                      {/* Cover / play */}
                       <div
                         className="hts-thumb"
                         onClick={() => togglePlay(track)}
@@ -529,7 +494,6 @@ export default function HomeTrackSearch() {
                         </div>
                       </div>
 
-                      {/* Meta */}
                       <div
                         className="hts-meta"
                         onClick={() => togglePlay(track)}
@@ -541,7 +505,6 @@ export default function HomeTrackSearch() {
                         </div>
                       </div>
 
-                      {/* Mood tags */}
                       <div className="hts-tags">
                         {moods.slice(0, 2).map((tag) => (
                           <span key={tag} className="hts-tag">
@@ -550,10 +513,8 @@ export default function HomeTrackSearch() {
                         ))}
                       </div>
 
-                      {/* Duration */}
                       <span className="hts-dur">{track.duration}</span>
 
-                      {/* Share */}
                       <button
                         className={`hts-share-btn${copiedId === track.id ? " copied" : ""}`}
                         onClick={(e) => {
@@ -570,7 +531,6 @@ export default function HomeTrackSearch() {
                         )}
                       </button>
 
-                      {/* Download */}
                       {track.downloadable && (
                         <button
                           className="hts-dl-btn"
@@ -589,7 +549,6 @@ export default function HomeTrackSearch() {
                 })}
               </div>
 
-              {/* Footer */}
               <div className="hts-footer">
                 <p className="hts-footer-text">
                   Showing <strong>{displayed.length}</strong> of{" "}
@@ -608,6 +567,50 @@ export default function HomeTrackSearch() {
           )}
         </div>
       </section>
+      <PlayerBar
+        track={allTracks.find((t) => t.id === playingId) ?? null}
+        album={
+          playingId
+            ? {
+                id: allTracks.find((t) => t.id === playingId)?.albumId ?? "",
+                title:
+                  allTracks.find((t) => t.id === playingId)?.composer ?? "",
+                coverImage:
+                  allTracks.find((t) => t.id === playingId)?.coverImage ??
+                  undefined,
+              }
+            : null
+        }
+        isPlaying={isPlaying}
+        onPlayPause={() => {
+          if (!audioRef.current) return;
+          if (isPlaying) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+          } else {
+            audioRef.current.play();
+            setIsPlaying(true);
+          }
+        }}
+        onNext={() => {
+          const idx = allTracks.findIndex((t) => t.id === playingId);
+          if (allTracks[idx + 1]) togglePlay(allTracks[idx + 1]);
+        }}
+        onPrev={() => {
+          const idx = allTracks.findIndex((t) => t.id === playingId);
+          if (allTracks[idx - 1]) togglePlay(allTracks[idx - 1]);
+        }}
+        onClose={stopAudio}
+        onFavourite={async (track) => {
+          const res = await fetch("/api/user/favourites", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ trackId: track.id }),
+          });
+          alert(res.ok ? "Added to favourites!" : "Failed.");
+        }}
+        audioRef={audioRef}
+      />
     </>
   );
 }

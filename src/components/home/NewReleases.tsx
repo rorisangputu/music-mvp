@@ -3,8 +3,6 @@
 import React, { useEffect, useState, cache } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { ArrowRight, Music } from "lucide-react";
 
 type Album = {
@@ -12,40 +10,36 @@ type Album = {
   title: string;
   description: string;
   category: string;
-  coverImage?: string;
-  genre?: string;
-  artist?: string;
-  createdAt?: any;
+  genre: string;
+  composer: string;
+  coverImage: string;
+  releaseDate: string;
+  mood: string;
+  cueSheet: string;
 };
 
 const LibNewReleases = () => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const CACHE_KEY = "music_lib_albums_v3";
   useEffect(() => {
     const fetchLatestAlbums = async () => {
       try {
-        const albumsQuery = query(
-          collection(db, "albums"),
-          orderBy("genre", "asc"),
-          limit(10)
-        );
-        const snapshot = await getDocs(albumsQuery);
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          category: doc.data().category,
-          coverImage: doc.data().coverImage,
-          genre: doc.data().genre,
-          title: doc.data().title,
-          artist: doc.data().artist,
-          description: doc.data().description,
-        }) as Album);
-        setAlbums(data);
+        const res = await fetch("/api/albums");
+        if (!res.ok) throw new Error(`Failed to fetch ${res.status}`);
+
+        const data = (await res.json()) as { albums: Album[] };
+        try {
+          sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ albums: data.albums, ts: Date.now() }),
+          );
+        } catch {}
+
+        setAlbums(data.albums);
+        //console.log(albums);
       } catch (error) {
         try {
-          const fallback = query(collection(db, "albums"), limit(10));
-          const snapshot = await getDocs(fallback);
-          setAlbums(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Album));
         } catch (e) {
           console.error("Error fetching albums:", e);
         }
@@ -289,7 +283,6 @@ const LibNewReleases = () => {
 
       <section className="lib-nr-root">
         <div className="lib-nr-inner">
-
           {/* Header */}
           <div className="lib-nr-header">
             <div>
@@ -303,8 +296,8 @@ const LibNewReleases = () => {
             </div>
             <div className="lib-nr-header-right">
               <p className="lib-nr-desc">
-                Fresh tracks added to the library — sync-cleared and ready
-                for your next production.
+                Fresh tracks added to the library — sync-cleared and ready for
+                your next production.
               </p>
               <Link href="/library" className="lib-nr-cta">
                 Browse Full Library
@@ -318,16 +311,29 @@ const LibNewReleases = () => {
             {loading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="lib-nr-skeleton">
-                  <div className="lib-nr-skeleton-img" style={{ animationDelay: `${i * 0.08}s` }} />
+                  <div
+                    className="lib-nr-skeleton-img"
+                    style={{ animationDelay: `${i * 0.08}s` }}
+                  />
                   <div className="lib-nr-skeleton-body">
-                    <div className="lib-nr-skeleton-line" style={{ width: "75%" }} />
-                    <div className="lib-nr-skeleton-line" style={{ width: "50%" }} />
+                    <div
+                      className="lib-nr-skeleton-line"
+                      style={{ width: "75%" }}
+                    />
+                    <div
+                      className="lib-nr-skeleton-line"
+                      style={{ width: "50%" }}
+                    />
                   </div>
                 </div>
               ))
-            ) : albums.length > 0 ? (
+            ) : albums ? (
               albums.map((album) => (
-                <Link key={album.id} href={`/library/${album.id}`} className="lib-nr-card">
+                <Link
+                  key={album.id}
+                  href={`/library/${album.id}`}
+                  className="lib-nr-card"
+                >
                   <div className="lib-nr-cover">
                     {album.coverImage ? (
                       <Image
@@ -349,9 +355,13 @@ const LibNewReleases = () => {
                   </div>
                   <div className="lib-nr-card-body">
                     <div className="lib-nr-card-title">{album.title}</div>
-                    <div className="lib-nr-card-artist">{album.artist || "Unknown Artist"}</div>
+                    <div className="lib-nr-card-artist">
+                      {album.composer || "Unknown Artist"}
+                    </div>
                     {album.category && (
-                      <div className="lib-nr-card-category">{album.category}</div>
+                      <div className="lib-nr-card-category">
+                        {album.category}
+                      </div>
                     )}
                   </div>
                 </Link>
@@ -368,7 +378,6 @@ const LibNewReleases = () => {
               </div>
             )}
           </div>
-
         </div>
       </section>
     </>
