@@ -447,7 +447,7 @@ export default function HomeTrackSearch() {
             </div>
           ) : displayed.length === 0 ? (
             <div className="hts-empty">
-              <div className="hts-empty-title">No tracks found</div>
+              <div className="hts-empty-title">No track(s) found</div>
               <p className="hts-empty-desc">
                 Try a different search or browse the full library.
               </p>
