@@ -18,20 +18,57 @@ type TrackCardProps = {
 type Track = {
   id: string;
   title: string;
-  duration: string;
   composer: string;
-  audioUrl: string;
-  cueSheetUrl?: string;
-  category: string;
-  genre: string;
-  mood: string[];
-  tags: string[];
-  bpm: number;
-  isrc: string;
   trackNumber: number;
+  duration: string;
+
+  version: string;
+  isrc?: string | null;
+  releaseDate?: string | null;
+  parentTrackId?: string | null;
+
+  genre: string;
+  subGenre?: string | null;
+  mood: string[];
+  energy: string;
+  bpm: number;
+  musicalKey?: string | null;
+
+  instruments: string[];
+  vocals: string;
+  vocalLanguage?: string | null;
+  featuredInstrument?: string | null;
+
+  category: string;
+  usageTags: string[];
+
   downloadable: boolean;
+  licenseTier: string;
+  exclusive: boolean;
+
+  cueSheetUrl?: string | null;
+  audioUrl: string | null;
+  waveformUrl?: string | null;
+
+  playCount: number;
+  downloadCount: number;
+
+  featured: boolean;
+  newRelease: boolean;
+  tags: string[];
+
   createdAt: string;
+  updatedAt: string;
+
   albumId: string;
+
+  downloads: {
+    id: string;
+    format: string;
+    url: string;
+    fileSize?: number | null;
+    bitrate?: number | null;
+  }[];
 };
 
 type ExistingPlaylist = {
@@ -56,7 +93,9 @@ const TrackCard = ({
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [addedMessage, setAddedMessage] = useState("");
-  const [existingPlaylists, setExistingPlaylists] = useState<ExistingPlaylist[]>([]);
+  const [existingPlaylists, setExistingPlaylists] = useState<
+    ExistingPlaylist[]
+  >([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
 
   // Fetch existing playlists when dropdown opens
@@ -89,13 +128,13 @@ const TrackCard = ({
 
     try {
       await onAddToPlaylist(track.id, playlistId);
-      
-      const playlist = PLAYLIST_CONFIGS.find(p => p.id === playlistId);
+
+      const playlist = PLAYLIST_CONFIGS.find((p) => p.id === playlistId);
       setAddedMessage(`✓ Added to ${playlist?.title || "playlist"}`);
-      
+
       // Refresh playlist list to show updated track counts
       await fetchExistingPlaylists();
-      
+
       setTimeout(() => {
         setShowPlaylistSelector(false);
         setAddedMessage("");
@@ -109,12 +148,12 @@ const TrackCard = ({
   };
 
   // Merge existing playlists with config playlists
-  const allPlaylists = PLAYLIST_CONFIGS.map(config => {
-    const existing = existingPlaylists.find(p => p.id === config.id);
+  const allPlaylists = PLAYLIST_CONFIGS.map((config) => {
+    const existing = existingPlaylists.find((p) => p.id === config.id);
     return {
       ...config,
       trackCount: existing?.trackCount || 0,
-      exists: !!existing
+      exists: !!existing,
     };
   });
   const isLoggedOut = !isUser && !isAdmin;
@@ -131,10 +170,13 @@ const TrackCard = ({
             <span className="flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
               {index + 1}
             </span>
-            <h3 className="text-xl font-semibold text-gray-900">{track.title}</h3>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {track.title}
+            </h3>
           </div>
           <p className="text-gray-600 mb-3">
-            By <span className="font-medium">{track.composer}</span> • {track.duration}
+            By <span className="font-medium">{track.composer}</span> •{" "}
+            {track.duration}
           </p>
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
@@ -232,7 +274,9 @@ const TrackCard = ({
                   {loadingPlaylists ? (
                     <div className="p-8 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 mt-2">Loading playlists...</p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Loading playlists...
+                      </p>
                     </div>
                   ) : (
                     <div className="py-2">
@@ -262,7 +306,8 @@ const TrackCard = ({
                               {playlist.description}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              {playlist.trackCount} {playlist.trackCount === 1 ? 'track' : 'tracks'}
+                              {playlist.trackCount}{" "}
+                              {playlist.trackCount === 1 ? "track" : "tracks"}
                             </p>
                           </div>
                         </button>

@@ -1,100 +1,102 @@
-import { collection, doc, getDoc, getDocs, query, Timestamp, where } from "firebase/firestore";
-import { db } from "../firebase";
+import db from "@/db/db";
 
-type albumProps={
-    albumId: string;
-
-}
-
-type Track = {
-  id: string;
-  title: string;
-  duration: string;
-  composer: string;
-  audioUrl: string;
-  cueSheetUrl?: string;
-  category: string;
-  genre: string;
-  mood: string[];
-  tags: string[];
-  bpm: number;
-  isrc: string;
-  trackNumber: number;
-  downloadable: boolean;
-  createdAt: string;
-  albumId: string;
-};
-
-type Album = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  coverImage?: string;
-  genre?: string;
-  cueSheet: string;
-};
-
-const convertSecondsToMinutes = (seconds: number): string => {
-  if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0)
-    return "0:00";
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
-
-const formatDuration = (timestamp: Timestamp): string => {
-  const seconds = timestamp.seconds;
-  if (seconds < 0 || seconds > 3600) {
-    return "0:00";
-  }
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
-
-const formatDate = (timestamp: Timestamp): string => {
-  return timestamp.toDate().toISOString().split("T")[0];
+const fmtDuration = (seconds: number): string => {
+  if (!seconds || seconds < 0) return "0:00";
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 };
 
 export async function getAlbumData(albumId: string) {
-  const albumDoc = await getDoc(doc(db, "albums", albumId));
-  
-  if (!albumDoc.exists()) {
-    return { album: null, tracks: [] };
-  }
-
-  const album = {
-    id: albumDoc.id,
-    ...albumDoc.data(),
-  } as Album;
-
-  // Fetch tracks by albumId
-  const q = query(
-    collection(db, "tracks"),
-    where("albumId", "==", albumId)
-  );
-  
-  const querySnapshot = await getDocs(q);
-  const tracks = querySnapshot.docs.map((doc) => {
-    const docData = doc.data();
-    return {
-      id: doc.id,
-      ...docData,
-      createdAt:
-        docData.createdAt instanceof Timestamp
-          ? formatDate(docData.createdAt)
-          : docData.createdAt,
-      duration:
-        docData.duration instanceof Timestamp
-          ? formatDuration(docData.duration)
-          : convertSecondsToMinutes(docData.duration),
-    } as Track;
+  const album = await db.album.findUnique({
+    where: { id: albumId },
+    include: {
+      tracks: {
+        include: {
+          trackDownloads: true,
+        },
+        orderBy: {
+          trackNumber: "asc",
+        },
+      },
+    },
   });
 
-  const sortedTracks = tracks.sort((a, b) => a.title.localeCompare(b.title));
+  if (!album) {
+    return {
+      album: null,
+      tracks: [],
+    };
+  }
 
-  return { album, tracks: sortedTracks };
+  const formattedAlbum = {
+    id: album.id,
+    title: album.title,
+    description: album.description,
+    category: album.category,
+    genre: album.genre,
+    composer: album.composer,
+    coverImage: album.coverImage,
+    cueSheet: album.cueSheet,
+    mood: album.mood,
+    featured: album.featured,
+    trackCount: album.trackCount,
+    releaseDate: album.releaseDate,
+    createdAt: album.createdAt,
+    updatedAt: album.updatedAt,
+  };
+
+  const formattedTracks = album.tracks.map((track) => ({
+    id: track.id,
+    title: track.title,
+    composer: track.composer,
+    trackNumber: track.trackNumber,
+
+    duration: fmtDuration(track.duration),
+
+    version: track.version,
+    isrc: track.isrc,
+    releaseDate: track.releaseDate,
+    parentTrackId: track.parentTrackId,
+
+    genre: track.genre,
+    subGenre: track.subGenre,
+    mood: track.mood,
+    energy: track.energy,
+    bpm: track.bpm,
+    musicalKey: track.musicalKey,
+
+    instruments: track.instruments,
+    vocals: track.vocals,
+    vocalLanguage: track.vocalLanguage,
+    featuredInstrument: track.featuredInstrument,
+
+    category: track.category,
+    usageTags: track.usageTags,
+
+    downloadable: track.downloadable,
+    licenseTier: track.licenseTier,
+    exclusive: track.exclusive,
+
+    cueSheetUrl: track.cueSheetUrl,
+    audioUrl: track.audioUrl,
+    waveformUrl: track.waveformUrl,
+
+    playCount: track.playCount,
+    downloadCount: track.downloadCount,
+
+    featured: track.featured,
+    newRelease: track.newRelease,
+    tags: track.tags,
+
+    createdAt: track.createdAt.toISOString().split("T")[0],
+    updatedAt: track.updatedAt.toISOString().split("T")[0],
+
+    albumId: track.albumId,
+
+    downloads: track.trackDownloads,
+  }));
+
+  return {
+    album: formattedAlbum,
+    tracks: formattedTracks,
+  };
 }
-
- // Server-side authentication check

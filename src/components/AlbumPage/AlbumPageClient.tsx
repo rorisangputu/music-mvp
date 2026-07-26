@@ -11,20 +11,57 @@ import TrackModal from "@/app/library/_components/TrackModal";
 type Track = {
   id: string;
   title: string;
-  duration: string;
   composer: string;
-  audioUrl: string;
-  cueSheetUrl?: string;
-  category: string;
-  genre: string;
-  mood: string[];
-  tags: string[];
-  bpm: number;
-  isrc: string;
   trackNumber: number;
+  duration: string;
+
+  version: string;
+  isrc?: string | null;
+  releaseDate?: string | null;
+  parentTrackId?: string | null;
+
+  genre: string;
+  subGenre?: string | null;
+  mood: string[];
+  energy: string;
+  bpm: number;
+  musicalKey?: string | null;
+
+  instruments: string[];
+  vocals: string;
+  vocalLanguage?: string | null;
+  featuredInstrument?: string | null;
+
+  category: string;
+  usageTags: string[];
+
   downloadable: boolean;
+  licenseTier: string;
+  exclusive: boolean;
+
+  cueSheetUrl?: string | null;
+  audioUrl: string | null;
+  waveformUrl?: string | null;
+
+  playCount: number;
+  downloadCount: number;
+
+  featured: boolean;
+  newRelease: boolean;
+  tags: string[];
+
   createdAt: string;
+  updatedAt: string;
+
   albumId: string;
+
+  downloads: {
+    id: string;
+    format: string;
+    url: string;
+    fileSize?: number | null;
+    bitrate?: number | null;
+  }[];
 };
 
 type Album = {
@@ -32,9 +69,14 @@ type Album = {
   title: string;
   description: string;
   category: string;
-  coverImage?: string;
-  genre?: string;
-  cueSheet: string;
+  genre: string;
+  composer: string;
+  coverImage: string;
+  cueSheet?: string | null;
+  featured: boolean;
+  trackCount: number;
+  mood: string[];
+  releaseDate?: string | null;
 };
 
 interface AlbumPageClientProps {
@@ -55,8 +97,10 @@ export default function AlbumPageClient({
   const [tracks] = useState<Track[]>(initialTracks);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(
+    null,
+  );
+
   // Delete states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -141,7 +185,11 @@ export default function AlbumPageClient({
     }
   };
 
-  const incrementPlayCount = async (trackId: string, title: string, url: string) => {
+  const incrementPlayCount = async (
+    trackId: string,
+    title: string,
+    url: string,
+  ) => {
     try {
       const res = await fetch("/api/tracks/play", {
         method: "POST",
@@ -159,7 +207,11 @@ export default function AlbumPageClient({
     }
   };
 
-  const incrementDownloadCount = async (trackId: string, title: string, url: string) => {
+  const incrementDownloadCount = async (
+    trackId: string,
+    title: string,
+    url: string,
+  ) => {
     try {
       const response = await fetch("/api/tracks/download", {
         method: "POST",
@@ -169,10 +221,18 @@ export default function AlbumPageClient({
 
       if (!response.ok) {
         const errorData = await response.json();
-        return { success: false, message: errorData.message || "Error incrementing", code: 400 };
+        return {
+          success: false,
+          message: errorData.message || "Error incrementing",
+          code: 400,
+        };
       }
 
-      return { success: true, message: "Download Count incremented", code: 200 };
+      return {
+        success: true,
+        message: "Download Count incremented",
+        code: 200,
+      };
     } catch (error) {
       return { success: false, message: "Server Error", code: 500 };
     }
@@ -183,7 +243,10 @@ export default function AlbumPageClient({
       alert("This track is not available for download");
       return;
     }
-
+    if (!track.audioUrl) {
+      alert("No audio file is available for this track.");
+      return;
+    }
     const link = document.createElement("a");
     link.href = track.audioUrl;
     link.download = `${track.title} - ${track.composer}.mp3`;
@@ -191,7 +254,11 @@ export default function AlbumPageClient({
     link.click();
     document.body.removeChild(link);
 
-    const increment = await incrementDownloadCount(track.id, track.title, track.audioUrl);
+    const increment = await incrementDownloadCount(
+      track.id,
+      track.title,
+      track.audioUrl,
+    );
 
     if (increment.success) {
       setDownloaded(true);
@@ -225,14 +292,21 @@ export default function AlbumPageClient({
         setCurrentAudio(null);
       }
 
-      const audio = new Audio(track.audioUrl);
+      if (!track.audioUrl) {
+        alert("No preview available for this track.");
+        return;
+      }
+
+      const audioUrl = track.audioUrl;
+
+      const audio = new Audio(audioUrl);
       setCurrentAudio(audio);
       setPlayingTrackId(track.id);
 
       audio
         .play()
         .then(() => {
-          incrementPlayCount(track.id, track.title, track.audioUrl);
+          incrementPlayCount(track.id, track.title, audioUrl);
         })
         .catch((error) => {
           console.error("Error playing audio:", error);
@@ -296,7 +370,9 @@ export default function AlbumPageClient({
 
             <div className="flex-1 space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-neutral-50 mb-4">{album.title}</h1>
+                <h1 className="text-4xl font-bold text-neutral-50 mb-4">
+                  {album.title}
+                </h1>
                 <div className="flex flex-wrap gap-3 mb-4">
                   <span className="inline-flex items-center px-3 py-1 rounded-sm text-sm font-medium bg-gray-100 text-gray-800">
                     {album.category}
@@ -307,7 +383,9 @@ export default function AlbumPageClient({
                     </span>
                   )}
                 </div>
-                <p className="text-neutral-100 text-lg leading-relaxed">{album.description}</p>
+                <p className="text-neutral-100 text-lg leading-relaxed">
+                  {album.description}
+                </p>
               </div>
 
               {isUser && (
@@ -327,34 +405,45 @@ export default function AlbumPageClient({
         {/* Delete Progress */}
         {deleteProgress.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Deletion Progress</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Deletion Progress
+            </h3>
             <div className="space-y-3">
               {deleteProgress.map((progress, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700">{progress.fileName}</span>
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <span className="text-sm font-medium text-gray-700">
+                    {progress.fileName}
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="text-lg">
                       {progress.status === "completed"
                         ? "✅"
                         : progress.status === "error"
-                        ? "❌"
-                        : progress.status === "deleting"
-                        ? "🗑️"
-                        : "⏳"}
+                          ? "❌"
+                          : progress.status === "deleting"
+                            ? "🗑️"
+                            : "⏳"}
                     </span>
                     <span
                       className={`text-sm font-medium capitalize ${
                         progress.status === "completed"
                           ? "text-green-600"
                           : progress.status === "error"
-                          ? "text-red-600"
-                          : "text-blue-600"
+                            ? "text-red-600"
+                            : "text-blue-600"
                       }`}
                     >
                       {progress.status}
                     </span>
                   </div>
-                  {progress.error && <p className="text-red-600 text-xs mt-1">{progress.error}</p>}
+                  {progress.error && (
+                    <p className="text-red-600 text-xs mt-1">
+                      {progress.error}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -423,9 +512,12 @@ export default function AlbumPageClient({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-red-600 mb-4">Delete Album</h2>
+                <h2 className="text-2xl font-bold text-red-600 mb-4">
+                  Delete Album
+                </h2>
                 <p className="text-gray-700 mb-4">
-                  Are you sure you want to delete "{album?.title}"? This action will:
+                  Are you sure you want to delete "{album?.title}"? This action
+                  will:
                 </p>
                 <ul className="text-sm text-gray-600 mb-6 space-y-2 bg-gray-50 p-4 rounded-lg">
                   <li className="flex items-center gap-2">
@@ -446,7 +538,9 @@ export default function AlbumPageClient({
                   </li>
                 </ul>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
-                  <p className="text-red-700 text-sm font-medium">⚠️ This action cannot be undone!</p>
+                  <p className="text-red-700 text-sm font-medium">
+                    ⚠️ This action cannot be undone!
+                  </p>
                 </div>
 
                 <div className="flex gap-3">

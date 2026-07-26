@@ -42,17 +42,36 @@ export default function PlayerBar({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
     const onTime = () => {
-      if (!isDragging) setCurrent(audio.currentTime);
+      if (!isDragging) {
+        setCurrent(audio.currentTime);
+      }
+
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
     };
-    const onMeta = () => setDuration(audio.duration || 0);
+
+    const onMeta = () => {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
+    };
+
+    // Handle metadata that may already be loaded
+    onMeta();
+
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("durationchange", onMeta);
+
     return () => {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("durationchange", onMeta);
     };
-  }, [audioRef, track, isDragging]);
+  }, [track, isDragging]);
 
   useEffect(() => {
     setCurrent(0);
@@ -278,7 +297,7 @@ export default function PlayerBar({
           </div>
 
           {/* Skip buttons */}
-          <div className="pb-skip-group" aria-label="Skip forward">
+          {/* <div className="pb-skip-group" aria-label="Skip forward">
             {[
               { label: "+15s", secs: 15 },
               { label: "+30s", secs: 30 },
@@ -294,7 +313,7 @@ export default function PlayerBar({
                 {label}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* Scrubber */}
           <div className="pb-scrubber">

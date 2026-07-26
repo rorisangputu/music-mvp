@@ -4,20 +4,57 @@ import { Download, Heart } from "lucide-react";
 type Track = {
   id: string;
   title: string;
-  duration: string;
   composer: string;
-  audioUrl: string;
-  cueSheetUrl?: string;
-  category: string;
-  genre: string;
-  mood: string[];
-  tags: string[];
-  bpm: number;
-  isrc: string;
   trackNumber: number;
+  duration: string;
+
+  version: string;
+  isrc?: string | null;
+  releaseDate?: string | null;
+  parentTrackId?: string | null;
+
+  genre: string;
+  subGenre?: string | null;
+  mood: string[];
+  energy: string;
+  bpm: number;
+  musicalKey?: string | null;
+
+  instruments: string[];
+  vocals: string;
+  vocalLanguage?: string | null;
+  featuredInstrument?: string | null;
+
+  category: string;
+  usageTags: string[];
+
   downloadable: boolean;
+  licenseTier: string;
+  exclusive: boolean;
+
+  cueSheetUrl?: string | null;
+  audioUrl: string | null;
+  waveformUrl?: string | null;
+
+  playCount: number;
+  downloadCount: number;
+
+  featured: boolean;
+  newRelease: boolean;
+  tags: string[];
+
   createdAt: string;
+  updatedAt: string;
+
   albumId: string;
+
+  downloads: {
+    id: string;
+    format: string;
+    url: string;
+    fileSize?: number | null;
+    bitrate?: number | null;
+  }[];
 };
 
 type TrackModalProps = {
@@ -26,7 +63,6 @@ type TrackModalProps = {
   onFavClick: (track: Track) => void;
   onDownloadClick: (track: Track) => void;
   isUser: boolean | null;
-  
 };
 
 const TrackModal = ({
@@ -35,7 +71,6 @@ const TrackModal = ({
   onFavClick,
   onDownloadClick,
   isUser,
-  
 }: TrackModalProps) => {
   const formatDateString = (timestamp: string): string => {
     return new Date(timestamp).toISOString().split("T")[0];
@@ -69,7 +104,6 @@ const TrackModal = ({
         </div>
 
         <div className="p-6 space-y-6">
-
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
             <p>
               <strong>Track Number:</strong> {track.trackNumber}
@@ -102,8 +136,8 @@ const TrackModal = ({
                   onClick={() => onFavClick(track)}
                   className="w-full inline-flex items-center justify-center px-4 py-2 gap-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-600 hover:bg-orange-700 transition-colors"
                 >
-                    <Heart className="w-4 h-4" />
-                    Add to Favorites
+                  <Heart className="w-4 h-4" />
+                  Add to Favorites
                 </button>
 
                 {track.downloadable && (
@@ -112,11 +146,9 @@ const TrackModal = ({
                     className="w-full inline-flex items-center justify-center px-4 py-2 gap-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                      Download Track
+                    Download Track
                   </button>
                 )}
-
-                
               </div>
             </div>
           )}
