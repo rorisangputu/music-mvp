@@ -43,11 +43,9 @@ export async function GET(req: NextRequest) {
       exclusive:         t.exclusive,
       cueSheetUrl:       t.cueSheetUrl,
       audioUrl:          t.audioUrl,
-      previewUrl:        t.previewUrl,
+      
       waveformUrl:       t.waveformUrl,
-      format:            t.format,
-      fileSize:          t.fileSize,
-      bitrate:           t.bitrate,
+      
       playCount:         t.playCount,
       downloadCount:     t.downloadCount,
       featured:          t.featured,
