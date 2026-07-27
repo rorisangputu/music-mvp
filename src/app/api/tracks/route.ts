@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       // Joined from album
       coverImage:        t.album?.coverImage ?? null,
     }));
-    console.log(formatted)
+    //console.log(formatted)
     return NextResponse.json({ tracks: formatted });
 
   } catch (err) {

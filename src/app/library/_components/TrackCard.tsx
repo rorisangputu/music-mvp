@@ -1,6 +1,6 @@
 // app/library/_components/TrackCard.tsx
 import React, { useState, useEffect } from "react";
-import { Download, ListPlus, Pause, Play } from "lucide-react";
+import { Download, ListPlus, Pause, Play, Check, X } from "lucide-react";
 import { PLAYLIST_CONFIGS } from "@/scripts/palylistConfig";
 
 type TrackCardProps = {
@@ -130,7 +130,7 @@ const TrackCard = ({
       await onAddToPlaylist(track.id, playlistId);
 
       const playlist = PLAYLIST_CONFIGS.find((p) => p.id === playlistId);
-      setAddedMessage(`✓ Added to ${playlist?.title || "playlist"}`);
+      setAddedMessage(`success:Added to ${playlist?.title || "playlist"}`);
 
       // Refresh playlist list to show updated track counts
       await fetchExistingPlaylists();
@@ -140,7 +140,7 @@ const TrackCard = ({
         setAddedMessage("");
       }, 2000);
     } catch (error) {
-      setAddedMessage("✗ Failed to add to playlist");
+      setAddedMessage("error:Failed to add to playlist");
       console.error("Error adding to playlist:", error);
     } finally {
       setIsAdding(false);
@@ -157,170 +157,307 @@ const TrackCard = ({
     };
   });
   const isLoggedOut = !isUser && !isAdmin;
+  const isPlaying = playingTrackId === track.id;
+  const messageIsSuccess = addedMessage.startsWith("success:");
+  const messageText = addedMessage.split(":")[1] || "";
 
   const handleSignUpForDownload = () => {
     window.location.href = "/signup";
   };
 
   return (
-    <div className="bg-white rounded-sm shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-              {index + 1}
-            </span>
-            <h3 className="text-xl font-semibold text-gray-900">
-              {track.title}
-            </h3>
-          </div>
-          <p className="text-gray-600 mb-3">
-            By <span className="font-medium">{track.composer}</span> •{" "}
-            {track.duration}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-              {track.category}
-            </span>
-            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700">
-              {track.genre}
-            </span>
-          </div>
-        </div>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Syne:wght@700;800&family=Manrope:wght@400;500;600&display=swap');
 
-      <div className="flex flex-row flex-wrap justify-start items-center gap-3">
+        .tc-row {
+          border: 1px solid #ccc5b9; background: #fffcf2;
+          position: relative; overflow: visible;
+          display: flex; align-items: center; gap: 1.25rem;
+          padding: 1rem 1.25rem; transition: background 0.15s;
+        }
+        .tc-row:hover { background: #f9f6ef; }
+        .tc-row.playing { background: #fff5f0; }
+        .tc-row::before {
+          content: ''; position: absolute; left: 0; top: 0;
+          width: 3px; height: 100%; background: #eb5e28;
+          transform: scaleY(0); transform-origin: top;
+          transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+        }
+        .tc-row:hover::before, .tc-row.playing::before { transform: scaleY(1); }
+
+        .tc-index {
+          font-family: 'Manrope', sans-serif; font-size: 0.7rem; font-weight: 700;
+          color: #403d39; opacity: 0.35; width: 22px; flex-shrink: 0; text-align: center;
+        }
+
+        .tc-play {
+          width: 38px; height: 38px; flex-shrink: 0;
+          background: #252422; border: none; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          color: #fffcf2; transition: background 0.2s;
+        }
+        .tc-play:hover { background: #eb5e28; }
+
+        .tc-meta { flex: 1; min-width: 0; }
+        .tc-title {
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+          letter-spacing: -0.01em; text-transform: uppercase; color: #252422;
+          line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .tc-sub {
+          font-family: 'Manrope', sans-serif; font-size: 0.72rem; color: #403d39;
+          opacity: 0.5; margin-top: 0.2rem;
+        }
+        .tc-sub strong { font-weight: 600; opacity: 1; color: #252422; }
+
+        .tc-tags { display: flex; gap: 0.4rem; flex-shrink: 0; }
+        .tc-tag {
+          font-family: 'Manrope', sans-serif; font-size: 0.58rem; font-weight: 600;
+          letter-spacing: 0.1em; text-transform: uppercase; color: #403d39;
+          border: 1px solid #ccc5b9; padding: 0.25rem 0.55rem; white-space: nowrap;
+        }
+        .tc-tag.accent { border-color: #eb5e28; color: #eb5e28; }
+
+        .tc-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; flex-wrap: wrap; }
+
+        .tc-btn {
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.66rem;
+          letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+          padding: 0.6rem 1.1rem; border: 1px solid transparent;
+          display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        .tc-btn-primary { background: #eb5e28; color: #fffcf2; }
+        .tc-btn-primary:hover { background: #d44c10; }
+        .tc-btn-ghost { background: none; border-color: #ccc5b9; color: #403d39; }
+        .tc-btn-ghost:hover { border-color: #eb5e28; color: #eb5e28; }
+        .tc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .tc-playlist-wrap { position: relative; }
+        .tc-backdrop { position: fixed; inset: 0; z-index: 30; }
+
+        .tc-dropdown {
+          position: absolute; right: 0; top: calc(100% + 0.5rem);
+          width: 300px; background: #fffcf2; border: 1px solid #ccc5b9;
+          z-index: 40; max-height: 22rem; overflow-y: auto;
+        }
+        .tc-dropdown-head {
+          padding: 0.9rem 1.1rem; border-bottom: 1px solid #ccc5b9; background: #f5f0e8;
+        }
+        .tc-dropdown-title {
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem;
+          letter-spacing: 0.04em; text-transform: uppercase; color: #252422;
+        }
+        .tc-dropdown-hint {
+          font-family: 'Manrope', sans-serif; font-size: 0.65rem; color: #403d39;
+          opacity: 0.5; margin-top: 0.25rem;
+        }
+        .tc-dropdown-msg {
+          margin: 0.75rem 0.9rem 0; padding: 0.55rem; text-align: center;
+          font-family: 'Manrope', sans-serif; font-size: 0.72rem; font-weight: 600;
+          border: 1px solid #ccc5b9; border-left: 3px solid #eb5e28; color: #252422;
+        }
+        .tc-dropdown-loading {
+          padding: 2rem; text-align: center;
+        }
+        .tc-spinner {
+          width: 22px; height: 22px; border: 2px solid rgba(235,94,40,0.15);
+          border-top-color: #eb5e28; border-radius: 50%;
+          animation: tc-spin 0.8s linear infinite; margin: 0 auto;
+        }
+        @keyframes tc-spin { to { transform: rotate(360deg); } }
+        .tc-dropdown-loading-text {
+          font-family: 'Manrope', sans-serif; font-size: 0.72rem; color: #403d39;
+          opacity: 0.5; margin-top: 0.6rem;
+        }
+
+        .tc-playlist-item {
+          width: 100%; padding: 0.75rem 1.1rem; text-align: left; background: none;
+          border: none; border-bottom: 1px solid #ccc5b9; cursor: pointer;
+          display: flex; align-items: flex-start; gap: 0.75rem; transition: background 0.15s;
+        }
+        .tc-playlist-item:last-child { border-bottom: none; }
+        .tc-playlist-item:hover { background: #f9f6ef; }
+        .tc-playlist-item:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tc-playlist-swatch { width: 34px; height: 34px; flex-shrink: 0; }
+        .tc-playlist-info { flex: 1; min-width: 0; }
+        .tc-playlist-name-row { display: flex; align-items: center; gap: 0.5rem; }
+        .tc-playlist-name {
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem;
+          text-transform: uppercase; letter-spacing: -0.01em; color: #252422;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .tc-playlist-new {
+          font-family: 'Manrope', sans-serif; font-size: 0.55rem; font-weight: 700;
+          letter-spacing: 0.06em; text-transform: uppercase; color: #eb5e28;
+          border: 1px solid #eb5e28; padding: 0.1rem 0.35rem; flex-shrink: 0;
+        }
+        .tc-playlist-desc {
+          font-family: 'Manrope', sans-serif; font-size: 0.66rem; color: #403d39;
+          opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          margin-top: 0.1rem;
+        }
+        .tc-playlist-count {
+          font-family: 'Manrope', sans-serif; font-size: 0.62rem; color: #403d39;
+          opacity: 0.4; margin-top: 0.15rem;
+        }
+
+        @media (max-width: 768px) {
+          .tc-row { flex-wrap: wrap; gap: 0.75rem 1rem; }
+          .tc-tags { display: none; }
+          .tc-actions { width: 100%; }
+          .tc-btn { flex: 1; justify-content: center; }
+        }
+      `}</style>
+
+      <div className={`tc-row${isPlaying ? " playing" : ""}`}>
+        <span className="tc-index">{index + 1}</span>
+
         <button
+          className="tc-play"
           onClick={() => onPlayClick(track)}
-          className="px-2 py-2 bg-white text-orange-600 rounded hover:bg-orange-700 transition-colors"
+          aria-label={isPlaying ? "Pause" : "Play"}
         >
-          {playingTrackId === track.id ? (
-            <Pause className="w-5 h-5" />
+          {isPlaying ? (
+            <Pause size={15} />
           ) : (
-            <Play className="w-5 h-5" />
+            <Play size={15} style={{ marginLeft: 2 }} />
           )}
         </button>
 
-        <button
-          className="inline-flex items-center justify-center px-4 py-2 border w-fit max-sm:flex-1 max-sm:min-w-36 border-transparent text-sm font-medium rounded text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-sm"
-          onClick={() => onClick(track)}
-        >
-          View Options
-        </button>
-
-        {isUser && track.downloadable && onDownloadClick && (
-          <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-orange-600 text-sm font-medium rounded text-orange-600 bg-white hover:bg-orange-50 transition-colors shadow-sm max-sm:flex-1 max-sm:min-w-36"
-            onClick={() => onDownloadClick(track)}
-          >
-            <Download className="w-4 h-4" />
-            Download
-          </button>
-        )}
-
-        {isLoggedOut && (
-          <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-orange-600 text-sm font-medium rounded text-orange-600 bg-white hover:bg-orange-50 transition-colors shadow-sm max-sm:w-full"
-            onClick={handleSignUpForDownload}
-          >
-            <Download className="w-4 h-4" />
-            sign up for free download
-          </button>
-        )}
-
-        {isAdmin && (
-          <div className="relative">
-            <button
-              onClick={() => setShowPlaylistSelector(!showPlaylistSelector)}
-              disabled={isAdding}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-blue-600 text-sm font-medium rounded text-blue-600 bg-white hover:bg-blue-50 transition-colors shadow-sm disabled:opacity-50"
-            >
-              <ListPlus className="w-4 h-4" />
-              Add to Playlist
-            </button>
-
-            {/* Playlist Selector Dropdown */}
-            {showPlaylistSelector && (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowPlaylistSelector(false)}
-                />
-
-                {/* Dropdown */}
-                <div className="absolute left-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-96 overflow-y-auto">
-                  <div className="p-3 border-b border-gray-200 bg-gray-50">
-                    <h4 className="text-sm font-semibold text-gray-900">
-                      Select a Playlist
-                    </h4>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Playlist will be created if it doesn't exist
-                    </p>
-                  </div>
-
-                  {addedMessage && (
-                    <div
-                      className={`mx-3 mt-3 p-2 rounded text-sm text-center ${
-                        addedMessage.startsWith("✓")
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : "bg-red-50 text-red-700 border border-red-200"
-                      }`}
-                    >
-                      {addedMessage}
-                    </div>
-                  )}
-
-                  {loadingPlaylists ? (
-                    <div className="p-8 text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Loading playlists...
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="py-2">
-                      {allPlaylists.map((playlist) => (
-                        <button
-                          key={playlist.id}
-                          onClick={() => handleAddToPlaylist(playlist.id)}
-                          disabled={isAdding}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-start gap-3 disabled:opacity-50"
-                        >
-                          <div
-                            className="w-10 h-10 rounded flex-shrink-0"
-                            style={{ backgroundColor: playlist.coverColor }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {playlist.title}
-                              </p>
-                              {!playlist.exists && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                                  New
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 truncate">
-                              {playlist.description}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {playlist.trackCount}{" "}
-                              {playlist.trackCount === 1 ? "track" : "tracks"}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+        <div className="tc-meta">
+          <div className="tc-title">{track.title}</div>
+          <div className="tc-sub">
+            By <strong>{track.composer}</strong> · {track.duration}
           </div>
-        )}
+        </div>
+
+        <div className="tc-tags">
+          {track.category && <span className="tc-tag">{track.category}</span>}
+          {track.genre && <span className="tc-tag accent">{track.genre}</span>}
+        </div>
+
+        <div className="tc-actions">
+          <button
+            className="tc-btn tc-btn-primary"
+            onClick={() => onClick(track)}
+          >
+            View Options
+          </button>
+
+          {isUser && track.downloadable && onDownloadClick && (
+            <button
+              className="tc-btn tc-btn-ghost"
+              onClick={() => onDownloadClick(track)}
+            >
+              <Download size={12} />
+              Download
+            </button>
+          )}
+
+          {isLoggedOut && (
+            <button
+              className="tc-btn tc-btn-ghost"
+              onClick={handleSignUpForDownload}
+            >
+              <Download size={12} />
+              Sign Up to Download
+            </button>
+          )}
+
+          {isAdmin && (
+            <div className="tc-playlist-wrap">
+              <button
+                className="tc-btn tc-btn-ghost"
+                onClick={() => setShowPlaylistSelector(!showPlaylistSelector)}
+                disabled={isAdding}
+              >
+                <ListPlus size={12} />
+                Add to Playlist
+              </button>
+
+              {showPlaylistSelector && (
+                <>
+                  <div
+                    className="tc-backdrop"
+                    onClick={() => setShowPlaylistSelector(false)}
+                  />
+
+                  <div className="tc-dropdown">
+                    <div className="tc-dropdown-head">
+                      <div className="tc-dropdown-title">Select a Playlist</div>
+                      <div className="tc-dropdown-hint">
+                        Playlist will be created if it doesn&rsquo;t exist
+                      </div>
+                    </div>
+
+                    {addedMessage && (
+                      <div className="tc-dropdown-msg">
+                        {messageIsSuccess ? (
+                          <Check
+                            size={12}
+                            style={{ display: "inline", marginRight: 4 }}
+                          />
+                        ) : (
+                          <X
+                            size={12}
+                            style={{ display: "inline", marginRight: 4 }}
+                          />
+                        )}
+                        {messageText}
+                      </div>
+                    )}
+
+                    {loadingPlaylists ? (
+                      <div className="tc-dropdown-loading">
+                        <div className="tc-spinner" />
+                        <p className="tc-dropdown-loading-text">
+                          Loading playlists...
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        {allPlaylists.map((playlist) => (
+                          <button
+                            key={playlist.id}
+                            className="tc-playlist-item"
+                            onClick={() => handleAddToPlaylist(playlist.id)}
+                            disabled={isAdding}
+                          >
+                            <div
+                              className="tc-playlist-swatch"
+                              style={{ backgroundColor: playlist.coverColor }}
+                            />
+                            <div className="tc-playlist-info">
+                              <div className="tc-playlist-name-row">
+                                <span className="tc-playlist-name">
+                                  {playlist.title}
+                                </span>
+                                {!playlist.exists && (
+                                  <span className="tc-playlist-new">New</span>
+                                )}
+                              </div>
+                              <div className="tc-playlist-desc">
+                                {playlist.description}
+                              </div>
+                              <div className="tc-playlist-count">
+                                {playlist.trackCount}{" "}
+                                {playlist.trackCount === 1 ? "track" : "tracks"}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
