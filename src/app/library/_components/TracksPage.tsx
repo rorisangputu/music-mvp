@@ -14,6 +14,9 @@ import {
   ChevronRight,
   Search,
   SlidersHorizontal,
+  LayoutGrid,
+  List as ListIcon,
+  Music,
 } from "lucide-react";
 import PlayerBar from "./PlayBar";
 import { Share2, Check } from "lucide-react";
@@ -49,6 +52,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedTrackId, setCopiedTrackId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload cache: store Audio objects keyed by track id so hover-preloads persist
@@ -319,16 +323,35 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
         }
         .tp-clear-btn:hover { border-color:#eb5e28; color:#eb5e28; }
 
-        /* Results info */
+        /* ══ List toolbar (results info + view toggle) ══ */
+        .tp-toolbar {
+          display:flex; align-items:center; justify-content:space-between;
+          gap:1rem; margin-bottom:1.25rem;
+        }
         .tp-results-info {
-          margin-bottom:1.25rem;
           font-family:'Manrope',sans-serif; font-size:.7rem; font-weight:600;
           letter-spacing:.1em; text-transform:uppercase;
           color:#eb5e28; display:flex; align-items:center; gap:.6rem;
         }
         .tp-results-info::before { content:''; display:block; width:16px; height:1px; background:#eb5e28; }
+        .tp-results-info.muted {
+          color:#403d39; opacity:.4;
+        }
+        .tp-results-info.muted::before { background:#403d39; opacity:.6; }
 
-        /* ══ Track list ══ */
+        .tp-view-toggle {
+          display:flex; border:1px solid #ccc5b9; flex-shrink:0; margin-left:auto;
+        }
+        .tp-view-btn {
+          width:34px; height:34px; background:none; border:none; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          color:#403d39; opacity:.45; transition:background .2s,color .2s,opacity .2s;
+        }
+        .tp-view-btn:first-child { border-right:1px solid #ccc5b9; }
+        .tp-view-btn:hover { opacity:1; color:#eb5e28; }
+        .tp-view-btn.active { background:#eb5e28; color:#fffcf2; opacity:1; }
+
+        /* ══ Track list (row view) ══ */
         .tp-list {
           border:1px solid #ccc5b9;
           border-bottom:none;
@@ -408,21 +431,20 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
 
         /* Mood tags */
         .tp-tags {
-  display:flex; flex-wrap:nowrap; gap:.3rem;
-  overflow:hidden; min-width:0;
-}
-.tp-tag {
-  font-family:'Manrope',sans-serif; font-size:.55rem; font-weight:600;
-  letter-spacing:.1em; text-transform:uppercase;
-  color:#403d39; border:1px solid #ccc5b9;
-  padding:.2rem .5rem; line-height:1;
-  white-space:nowrap; flex-shrink:1; min-width:0;
- 
-  overflow:hidden; text-overflow:ellipsis;
-  cursor:pointer; transition:border-color .15s,color .15s,background .15s;
-}
-.tp-tag:hover { border-color:#eb5e28; color:#eb5e28; }
-.tp-tag.active { border-color:#eb5e28; color:#fffcf2; background:#eb5e28; }
+          display:flex; flex-wrap:nowrap; gap:.3rem;
+          overflow:hidden; min-width:0;
+        }
+        .tp-tag {
+          font-family:'Manrope',sans-serif; font-size:.55rem; font-weight:600;
+          letter-spacing:.1em; text-transform:uppercase;
+          color:#403d39; border:1px solid #ccc5b9;
+          padding:.2rem .5rem; line-height:1;
+          white-space:nowrap; flex-shrink:1; min-width:0;
+          overflow:hidden; text-overflow:ellipsis;
+          cursor:pointer; transition:border-color .15s,color .15s,background .15s;
+        }
+        .tp-tag:hover { border-color:#eb5e28; color:#eb5e28; }
+        .tp-tag.active { border-color:#eb5e28; color:#fffcf2; background:#eb5e28; }
         /* Duration */
         .tp-row-dur {
           font-family:'Manrope',sans-serif; font-size:.65rem; font-weight:500;
@@ -469,6 +491,98 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
         }
         .tp-signup-row-btn:hover { background:#eb5e28; color:#fffcf2; }
 
+        /* ══ Track grid (cover view) ══ */
+        .tp-grid {
+          display:grid;
+          grid-template-columns:repeat(5, 1fr);
+          border-left:1px solid #ccc5b9;
+          border-top:1px solid #ccc5b9;
+        }
+        .tp-grid-card {
+          border-right:1px solid #ccc5b9;
+          border-bottom:1px solid #ccc5b9;
+          display:flex; flex-direction:column;
+          position:relative; overflow:hidden;
+          background:#fffcf2; transition:background .2s;
+        }
+        .tp-grid-card:hover, .tp-grid-card.playing { background:#f5f0e8; }
+        .tp-grid-card::before {
+          content:''; position:absolute; top:0; left:0;
+          width:100%; height:3px; background:#eb5e28;
+          transform:scaleX(0); transform-origin:left;
+          transition:transform .35s cubic-bezier(.16,1,.3,1); z-index:3;
+        }
+        .tp-grid-card:hover::before, .tp-grid-card.playing::before { transform:scaleX(1); }
+
+        .tp-grid-cover {
+          width:100%; aspect-ratio:1; position:relative; overflow:hidden;
+          background:#252422; flex-shrink:0; cursor:pointer;
+        }
+        .tp-grid-cover img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s ease; }
+        .tp-grid-card:hover .tp-grid-cover img { transform:scale(1.05); }
+        .tp-grid-cover-ph {
+          width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+        }
+        .tp-grid-genre-badge {
+          position:absolute; top:.6rem; left:.6rem;
+          font-family:'Manrope',sans-serif; font-size:.52rem; font-weight:700;
+          letter-spacing:.1em; text-transform:uppercase;
+          color:#fffcf2; background:#eb5e28; padding:.18rem .45rem; z-index:2;
+        }
+        .tp-grid-overlay {
+          position:absolute; inset:0; background:rgba(37,36,34,.55);
+          display:flex; align-items:center; justify-content:center;
+          opacity:0; transition:opacity .2s; z-index:2;
+        }
+        .tp-grid-card:hover .tp-grid-overlay, .tp-grid-card.playing .tp-grid-overlay { opacity:1; }
+
+        .tp-grid-body { padding:.85rem; display:flex; flex-direction:column; gap:.3rem; border-top:1px solid #ccc5b9; }
+        .tp-grid-title {
+          font-family:'Syne',sans-serif; font-weight:700; font-size:.78rem;
+          letter-spacing:-.01em; text-transform:uppercase; color:#252422; line-height:1.2;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+          transition:color .18s;
+        }
+        .tp-grid-card:hover .tp-grid-title { color:#eb5e28; }
+        .tp-grid-sub {
+          font-family:'Manrope',sans-serif; font-size:.65rem; font-weight:500;
+          color:#403d39; opacity:.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .tp-grid-tags { display:flex; flex-wrap:wrap; gap:.25rem; margin-top:.15rem; }
+        .tp-grid-tag {
+          font-family:'Manrope',sans-serif; font-size:.5rem; font-weight:600;
+          letter-spacing:.08em; text-transform:uppercase; color:#403d39;
+          border:1px solid #ccc5b9; padding:.15rem .4rem; line-height:1;
+        }
+        .tp-grid-actions {
+          display:flex; align-items:center; gap:.4rem; margin-top:.55rem; flex-wrap:wrap;
+        }
+        .tp-grid-icon-btn {
+          width:26px; height:26px; border:1px solid #ccc5b9; background:none;
+          color:#403d39; cursor:pointer; display:flex; align-items:center; justify-content:center;
+          flex-shrink:0; transition:border-color .2s,color .2s,background .2s;
+        }
+        .tp-grid-icon-btn:hover { border-color:#eb5e28; color:#eb5e28; }
+        .tp-grid-icon-btn.copied { border-color:#eb5e28; background:#eb5e28; color:#fffcf2; }
+        .tp-grid-dl-btn {
+          font-family:'Manrope',sans-serif; font-size:.56rem; font-weight:600;
+          letter-spacing:.08em; text-transform:uppercase;
+          color:#fffcf2; background:#eb5e28; border:1px solid #eb5e28;
+          padding:.35rem .55rem; cursor:pointer; flex:1;
+          display:flex; align-items:center; justify-content:center; gap:.3rem;
+          transition:background .2s; white-space:nowrap;
+        }
+        .tp-grid-dl-btn:hover { background:#d44c10; border-color:#d44c10; }
+        .tp-grid-signup-btn {
+          font-family:'Manrope',sans-serif; font-size:.56rem; font-weight:600;
+          letter-spacing:.06em; text-transform:uppercase;
+          color:#eb5e28; background:none; border:1px solid #eb5e28;
+          padding:.35rem .55rem; cursor:pointer; flex:1; text-decoration:none;
+          display:flex; align-items:center; justify-content:center; gap:.3rem;
+          transition:background .2s,color .2s; white-space:nowrap;
+        }
+        .tp-grid-signup-btn:hover { background:#eb5e28; color:#fffcf2; }
+
         /* Loading / empty */
         .tp-spinner-wrap {
           display:flex; align-items:center; justify-content:center;
@@ -487,7 +601,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
           padding:5rem 2rem;
           display:flex; flex-direction:column; align-items:center;
           justify-content:center; gap:1rem; text-align:center;
-          border-bottom:1px solid #ccc5b9;
+          border:1px solid #ccc5b9;
         }
         .tp-empty-icon {
           width:52px; height:52px; border:1px solid #ccc5b9;
@@ -635,6 +749,9 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
         .tp-share-btn.copied { border-color:#eb5e28; background:#eb5e28; color:#fffcf2; }
 
         /* ══ Responsive ══ */
+        @media(max-width:1200px) {
+          .tp-grid { grid-template-columns:repeat(4,1fr); }
+        }
         @media(max-width:1024px) {
           .tp-head { grid-template-columns:1fr; gap:1.5rem; }
           .tp-list-head { display:none; }
@@ -649,12 +766,15 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
           .tp-tags { grid-column:2; grid-row:2; }
           .tp-row-dur { display:none; }
           .tp-row-actions { grid-column:3; grid-row:1/3; align-self:center; flex-direction:column; }
+          .tp-grid { grid-template-columns:repeat(3,1fr); }
         }
         @media(max-width:640px) {
           .tp-inner { padding:1.5rem 1rem; }
           .tp-signup-banner { flex-direction:column; align-items:flex-start; gap:.75rem; }
           .tp-row { padding:.75rem 1rem; }
           .tp-popup-grid { grid-template-columns:1fr; }
+          .tp-grid { grid-template-columns:repeat(2,1fr); }
+          .tp-toolbar { flex-wrap:wrap; }
         }
       `}</style>
 
@@ -770,16 +890,41 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
             )}
           </div>
 
-          {/* Results info */}
-          {hasFilters && (
-            <div className="tp-results-info">
-              {totalItems} result{totalItems !== 1 ? "s" : ""}
-              {search && ` — "${search}"`}
-              {categoryFilter && ` · ${categoryFilter}`}
-              {genreFilter && ` · ${genreFilter}`}
-              {moodFilter && ` · ${moodFilter}`}
+          {/* Toolbar: results info + view toggle */}
+          <div className="tp-toolbar">
+            {hasFilters ? (
+              <div className="tp-results-info">
+                {totalItems} result{totalItems !== 1 ? "s" : ""}
+                {search && ` — "${search}"`}
+                {categoryFilter && ` · ${categoryFilter}`}
+                {genreFilter && ` · ${genreFilter}`}
+                {moodFilter && ` · ${moodFilter}`}
+              </div>
+            ) : (
+              <div className="tp-results-info muted">
+                Showing {tracks.length} of {totalItems}
+              </div>
+            )}
+
+            <div className="tp-view-toggle">
+              <button
+                className={`tp-view-btn${viewMode === "list" ? " active" : ""}`}
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                title="List view"
+              >
+                <ListIcon size={14} />
+              </button>
+              <button
+                className={`tp-view-btn${viewMode === "grid" ? " active" : ""}`}
+                onClick={() => setViewMode("grid")}
+                aria-label="Cover grid view"
+                title="Cover grid view"
+              >
+                <LayoutGrid size={14} />
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Loading */}
           {loading && (
@@ -802,8 +947,24 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
             </p>
           )}
 
-          {/* Track list */}
-          {!loading && !error && (
+          {/* Empty state (shared between views) */}
+          {!loading && !error && tracks.length === 0 && (
+            <div className="tp-empty">
+              <div className="tp-empty-icon">
+                <Search size={20} />
+              </div>
+              <div className="tp-empty-title">No Tracks Found</div>
+              <p className="tp-empty-desc">
+                No tracks match your filters. Try adjusting your search.
+              </p>
+              <button className="tp-empty-clear" onClick={clearFilters}>
+                Clear Filters
+              </button>
+            </div>
+          )}
+
+          {/* Track list — row view */}
+          {!loading && !error && tracks.length > 0 && viewMode === "list" && (
             <div className="tp-list">
               {/* Column headers */}
               <div className="tp-list-head">
@@ -820,141 +981,247 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
                 </div>
               </div>
 
-              {tracks.length > 0 ? (
-                tracks.map((track, idx) => {
-                  const isActive = playingTrackId === track.id;
-                  const moodArr: string[] = Array.isArray(track.mood)
-                    ? track.mood
-                    : track.mood
-                      ? [track.mood]
-                      : [];
+              {tracks.map((track, idx) => {
+                const isActive = playingTrackId === track.id;
+                const moodArr: string[] = Array.isArray(track.mood)
+                  ? track.mood
+                  : track.mood
+                    ? [track.mood]
+                    : [];
 
-                  return (
+                return (
+                  <div
+                    key={track.id}
+                    className={`tp-row${isActive ? " playing" : ""}`}
+                    onMouseEnter={() => handleTrackHover(track)}
+                  >
+                    {/* # */}
+                    <span className="tp-row-num">
+                      {String((currentPage - 1) * 20 + idx + 1).padStart(
+                        2,
+                        "0",
+                      )}
+                    </span>
+
+                    {/* Play */}
                     <div
-                      key={track.id}
-                      className={`tp-row${isActive ? " playing" : ""}`}
-                      onMouseEnter={() => handleTrackHover(track)}
+                      className="tp-cover-wrap"
+                      onClick={() => togglePlay(track)}
+                      style={{
+                        cursor: "pointer",
+                        position: "relative",
+                        width: 40,
+                        height: 40,
+                        flexShrink: 0,
+                      }}
                     >
-                      {/* # */}
-                      <span className="tp-row-num">
-                        {String((currentPage - 1) * 20 + idx + 1).padStart(
-                          2,
-                          "0",
-                        )}
-                      </span>
-
-                      {/* Play */}
-                      <div
-                        className="tp-cover-wrap"
-                        onClick={() => togglePlay(track)}
-                        style={{
-                          cursor: "pointer",
-                          position: "relative",
-                          width: 40,
-                          height: 40,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {track.coverImage ? (
-                          <img
-                            src={track.coverImage}
-                            alt={track.title}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              display: "block",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              background: "#252422",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontFamily: "Manrope,sans-serif",
-                                fontSize: ".5rem",
-                                color: "rgba(255,252,242,.2)",
-                                letterSpacing: ".1em",
-                              }}
-                            >
-                              NO ART
-                            </span>
-                          </div>
-                        )}
+                      {track.coverImage ? (
+                        <img
+                          src={track.coverImage}
+                          alt={track.title}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                          }}
+                        />
+                      ) : (
                         <div
                           style={{
-                            position: "absolute",
-                            inset: 0,
-                            background: "rgba(37,36,34,.55)",
+                            width: "100%",
+                            height: "100%",
+                            background: "#252422",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            opacity: isActive ? 1 : 0,
-                            transition: "opacity .2s",
                           }}
-                          className="tp-cover-overlay"
                         >
-                          {isActive ? (
-                            <Pause size={12} fill="#fffcf2" color="#fffcf2" />
-                          ) : (
-                            <Play
-                              size={12}
-                              fill="#fffcf2"
-                              color="#fffcf2"
-                              style={{ marginLeft: 2 }}
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Meta */}
-                      <div
-                        className="tp-row-meta"
-                        onClick={() => togglePlay(track)}
-                      >
-                        <div className="tp-row-title">{track.title}</div>
-                        <div className="tp-row-composer">
-                          {track.composer}
-                          {track.bpm ? ` · ${track.bpm} BPM` : ""}
-                          {track.genre ? ` · ${track.genre}` : ""}
-                        </div>
-                      </div>
-
-                      {/* Mood tags */}
-                      <div className="tp-tags">
-                        {moodArr.slice(0, 3).map((tag) => (
-                          <button
-                            key={tag}
-                            className={`tp-tag${moodFilter === tag ? " active" : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMoodChange(moodFilter === tag ? "" : tag);
+                          <span
+                            style={{
+                              fontFamily: "Manrope,sans-serif",
+                              fontSize: ".5rem",
+                              color: "rgba(255,252,242,.2)",
+                              letterSpacing: ".1em",
                             }}
                           >
-                            {tag}
-                          </button>
-                        ))}
+                            NO ART
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "rgba(37,36,34,.55)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity .2s",
+                        }}
+                        className="tp-cover-overlay"
+                      >
+                        {isActive ? (
+                          <Pause size={12} fill="#fffcf2" color="#fffcf2" />
+                        ) : (
+                          <Play
+                            size={12}
+                            fill="#fffcf2"
+                            color="#fffcf2"
+                            style={{ marginLeft: 2 }}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Meta */}
+                    <div
+                      className="tp-row-meta"
+                      onClick={() => togglePlay(track)}
+                    >
+                      <div className="tp-row-title">{track.title}</div>
+                      <div className="tp-row-composer">
+                        {track.composer}
+                        {track.bpm ? ` · ${track.bpm} BPM` : ""}
+                        {track.genre ? ` · ${track.genre}` : ""}
+                      </div>
+                    </div>
+
+                    {/* Mood tags */}
+                    <div className="tp-tags">
+                      {moodArr.slice(0, 3).map((tag) => (
+                        <button
+                          key={tag}
+                          className={`tp-tag${moodFilter === tag ? " active" : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoodChange(moodFilter === tag ? "" : tag);
+                          }}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Duration */}
+                    <span className="tp-row-dur">{track.duration}</span>
+
+                    {/* Actions */}
+                    <div
+                      className="tp-row-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className={`tp-share-btn${copiedTrackId === track.id ? " copied" : ""}`}
+                        onClick={() => handleShare(track)}
+                        aria-label="Share track"
+                        title="Share track"
+                      >
+                        {copiedTrackId === track.id ? (
+                          <Check size={12} />
+                        ) : (
+                          <Share2 size={12} />
+                        )}
+                      </button>
+                      <button
+                        className="tp-info-btn"
+                        onClick={() => setSelectedTrack(track)}
+                      >
+                        Info
+                      </button>
+                      {isUser && track.downloadable && (
+                        <button
+                          className="tp-dl-btn"
+                          onClick={() => handleDownload(track)}
+                        >
+                          <Download size={11} /> DOWNLOAD
+                        </button>
+                      )}
+                      {!isUser && !isAdmin && (
+                        <a href="/signup" className="tp-signup-row-btn">
+                          <Download size={11} /> Free
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Track grid — cover view */}
+          {!loading && !error && tracks.length > 0 && viewMode === "grid" && (
+            <div className="tp-grid">
+              {tracks.map((track) => {
+                const isActive = playingTrackId === track.id;
+                const moodArr: string[] = Array.isArray(track.mood)
+                  ? track.mood
+                  : track.mood
+                    ? [track.mood]
+                    : [];
+
+                return (
+                  <div
+                    key={track.id}
+                    className={`tp-grid-card${isActive ? " playing" : ""}`}
+                    onMouseEnter={() => handleTrackHover(track)}
+                  >
+                    <div
+                      className="tp-grid-cover"
+                      onClick={() => togglePlay(track)}
+                    >
+                      {track.coverImage ? (
+                        <img src={track.coverImage} alt={track.title} />
+                      ) : (
+                        <div className="tp-grid-cover-ph">
+                          <Music size={26} color="#403d39" opacity={0.3} />
+                        </div>
+                      )}
+                      {track.genre && (
+                        <span className="tp-grid-genre-badge">
+                          {track.genre}
+                        </span>
+                      )}
+                      <div className="tp-grid-overlay">
+                        {isActive ? (
+                          <Pause size={16} fill="#fffcf2" color="#fffcf2" />
+                        ) : (
+                          <Play
+                            size={16}
+                            fill="#fffcf2"
+                            color="#fffcf2"
+                            style={{ marginLeft: 2 }}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="tp-grid-body">
+                      <div
+                        className="tp-grid-title"
+                        onClick={() => setSelectedTrack(track)}
+                      >
+                        {track.title}
+                      </div>
+                      <div className="tp-grid-sub">
+                        {track.composer}
+                        {track.duration ? ` · ${track.duration}` : ""}
                       </div>
 
-                      {/* Duration */}
-                      <span className="tp-row-dur">{track.duration}</span>
+                      {moodArr.length > 0 && (
+                        <div className="tp-grid-tags">
+                          {moodArr.slice(0, 2).map((tag) => (
+                            <span key={tag} className="tp-grid-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
-                      {/* Actions */}
-
-                      <div
-                        className="tp-row-actions"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="tp-grid-actions">
                         <button
-                          className={`tp-share-btn${copiedTrackId === track.id ? " copied" : ""}`}
+                          className={`tp-grid-icon-btn${copiedTrackId === track.id ? " copied" : ""}`}
                           onClick={() => handleShare(track)}
                           aria-label="Share track"
                           title="Share track"
@@ -966,42 +1233,31 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
                           )}
                         </button>
                         <button
-                          className="tp-info-btn"
+                          className="tp-grid-icon-btn"
                           onClick={() => setSelectedTrack(track)}
+                          aria-label="Track info"
+                          title="Track info"
                         >
-                          Info
+                          <SlidersHorizontal size={12} />
                         </button>
                         {isUser && track.downloadable && (
                           <button
-                            className="tp-dl-btn"
+                            className="tp-grid-dl-btn"
                             onClick={() => handleDownload(track)}
                           >
-                            <Download size={11} /> DOWNLOAD
+                            <Download size={11} /> Get
                           </button>
                         )}
                         {!isUser && !isAdmin && (
-                          <a href="/signup" className="tp-signup-row-btn">
+                          <a href="/signup" className="tp-grid-signup-btn">
                             <Download size={11} /> Free
                           </a>
                         )}
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="tp-empty">
-                  <div className="tp-empty-icon">
-                    <Search size={20} />
                   </div>
-                  <div className="tp-empty-title">No Tracks Found</div>
-                  <p className="tp-empty-desc">
-                    No tracks match your filters. Try adjusting your search.
-                  </p>
-                  <button className="tp-empty-clear" onClick={clearFilters}>
-                    Clear Filters
-                  </button>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
 
