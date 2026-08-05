@@ -797,9 +797,8 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
                 production.
               </p>
               {!loading && (
-                <span className="tp-count">
-                  {totalItems} track{totalItems !== 1 ? "s" : ""} available
-                </span>
+                <span className="tp-count">Available Tracks</span>
+                //{totalItems} track{totalItems !== 1 ? "s" : ""}
               )}
             </div>
           </div>
@@ -902,7 +901,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
               </div>
             ) : (
               <div className="tp-results-info muted">
-                Showing {tracks.length} of {totalItems}
+                {/* Showing {tracks.length} of {totalItems} */}
               </div>
             )}
 
@@ -1265,7 +1264,7 @@ const TracksPage = ({ isAdmin, isUser }: TracksPageProps) => {
           {totalPages > 1 && (
             <div className="tp-pagination">
               <span className="tp-page-info">
-                Page {currentPage} of {totalPages} · {totalItems} tracks
+                {/* Page {currentPage} of {totalPages} · {totalItems} tracks */}
               </span>
               <div className="tp-page-btns">
                 <button
