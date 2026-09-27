@@ -255,7 +255,7 @@ export default function AlbumUpload() {
   // ── Album-level fields
   const [albumData, setAlbumData] = useState<AlbumUploadInput>({
     title: "",
-    composer: "",
+    composer: "Abe Sibiya",
     category: "",
     genre: "",
     description: "",
@@ -393,7 +393,7 @@ export default function AlbumUpload() {
     setStep("form");
     setAlbumData({
       title: "",
-      composer: "",
+      composer: "Abe Sibiya",
       category: "",
       genre: "",
       description: "",
